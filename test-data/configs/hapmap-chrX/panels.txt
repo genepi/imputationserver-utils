@@ -1,0 +1,11 @@
+
+  - id: phase1
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/$chr.1000g.Phase1.v3.With.Parameter.Estimates.m3vcf.gz
+    legend: ref-panels/1000g_chr$chr_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_withX.txt.gz
+    refEagle: ${app_local_folder}/ref-panels/ALL.chr$chr.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.bcf
+    samples:
+      eur: 60
+    populations:
+      eur: EUR

@@ -1,0 +1,79 @@
+
+   
+  - id: hapmap2
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    legend: ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
+    refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
+    samples:
+      eur: 60
+      mixed: -1
+    populations:
+      eur: EUR
+      mixed: Mixed
+      
+  - id: hapmap2-qcfilter-strandflips
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    legend: ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
+    refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
+    samples:
+      eur: 60
+      mixed: -1
+    populations:
+      eur: EUR
+      mixed: Mixed
+    qcFilter:
+      strandFlips: -1
+      
+  - id: hapmap2-qcfilter-ref-overlap
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    legend: ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
+    refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
+    samples:
+      eur: 60
+      mixed: -1
+    populations:
+      eur: EUR
+      mixed: Mixed
+    qcFilter:
+      overlap: 0.99
+      strandFlips: 100
+      minSnps: 1000
+      
+  - id: hapmap2-qcfilter-min-snps
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    legend: ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
+    refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
+    samples:
+      eur: 60
+      mixed: -1
+    populations:
+      eur: EUR
+      mixed: Mixed
+    qcFilter:
+     strandFlips: 100
+     minSnps: 1000
+
+  - id: hapmap2-qcfilter-low-callrate
+    reference_build: hg19
+    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    legend: ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
+    refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
+    samples:
+      eur: 60
+      mixed: -1
+    populations:
+      eur: EUR
+      mixed: Mixed
+    qcFilter:
+     sampleCallrate: 1.01   
+     strandFlips: 100
+       

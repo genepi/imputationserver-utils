@@ -1,0 +1,12 @@
+
+  - id: hapmap2
+    reference_build: hg38
+    hdfs: ${app_local_folder}/ref-panels/$chr.1000g.Phase1.v3.With.Parameter.Estimates.hg38.m3vcf.gz
+    legend: ref-panels/1000g_chrX_impute.hg38.legend.gz
+    mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg38_withX.txt.gz
+    refEagle: ${app_local_folder}/ref-panels/ALL.$chr.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.hg38.bcf
+    build: hg38
+    samples:
+      eur: 60
+    populations:
+      eur: EUR

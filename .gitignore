@@ -1,0 +1,7 @@
+/target/
+/tabix.output
+/dependency-reduced-pom.xml
+.DS_Store
+/.classpath
+/.project
+/.settings/
