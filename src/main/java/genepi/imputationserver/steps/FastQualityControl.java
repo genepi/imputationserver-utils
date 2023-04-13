@@ -12,6 +12,7 @@ import java.util.Locale;
 
 import cloudgene.sdk.internal.WorkflowContext;
 import cloudgene.sdk.internal.WorkflowStep;
+import genepi.imputationserver.Main;
 import genepi.imputationserver.steps.fastqc.ITask;
 import genepi.imputationserver.steps.fastqc.ITaskProgressListener;
 import genepi.imputationserver.steps.fastqc.LiftOverTask;
@@ -33,6 +34,8 @@ public class FastQualityControl extends WorkflowStep {
 	@Override
 	public boolean run(WorkflowContext context) {
 
+		context.log(Main.APP + " " + Main.VERSION);
+		
 		String folder = getFolder(FastQualityControl.class);
 		setupTabix(folder);
 		String inputFiles = context.get("files");
@@ -221,53 +224,53 @@ public class FastQualityControl extends WorkflowStep {
 
 		StringBuffer text = new StringBuffer();
 
-		text.append("<b>Statistics:</b> <br>");
+		text.append("<b>Statistics:</b> \n");
 		if (ranges != null) {
-			text.append("Ref. Panel Range: " + ranges + "<br>");
+			text.append("Ref. Panel Range: " + ranges + "\n");
 		}
 		text.append(
-				"Alternative allele frequency > 0.5 sites: " + formatter.format(task.getAlternativeAlleles()) + "<br>");
+				"Alternative allele frequency > 0.5 sites: " + formatter.format(task.getAlternativeAlleles()) + "\n");
 		text.append("Reference Overlap: "
 				+ df.format(
 						task.getFoundInLegend() / (double) (task.getFoundInLegend() + task.getNotFoundInLegend()) * 100)
-				+ " %" + "<br>");
+				+ " %" + "\n");
 
-		text.append("Match: " + formatter.format(task.getMatch()) + "<br>");
-		text.append("Allele switch: " + formatter.format(task.getAlleleSwitch()) + "<br>");
-		text.append("Strand flip: " + formatter.format(task.getStrandFlipSimple()) + "<br>");
-		text.append("Strand flip and allele switch: " + formatter.format(task.getStrandFlipAndAlleleSwitch()) + "<br>");
-		text.append("A/T, C/G genotypes: " + formatter.format(task.getComplicatedGenotypes()) + "<br>");
+		text.append("Match: " + formatter.format(task.getMatch()) + "\n");
+		text.append("Allele switch: " + formatter.format(task.getAlleleSwitch()) + "\n");
+		text.append("Strand flip: " + formatter.format(task.getStrandFlipSimple()) + "\n");
+		text.append("Strand flip and allele switch: " + formatter.format(task.getStrandFlipAndAlleleSwitch()) + "\n");
+		text.append("A/T, C/G genotypes: " + formatter.format(task.getComplicatedGenotypes()) + "\n");
 
-		text.append("<b>Filtered sites:</b> <br>");
-		text.append("Filter flag set: " + formatter.format(task.getFilterFlag()) + "<br>");
-		text.append("Invalid alleles: " + formatter.format(task.getInvalidAlleles()) + "<br>");
-		text.append("Multiallelic sites: " + formatter.format(task.getMultiallelicSites()) + "<br>");
-		text.append("Duplicated sites: " + formatter.format(task.getDuplicates()) + "<br>");
-		text.append("NonSNP sites: " + formatter.format(task.getNoSnps()) + "<br>");
-		text.append("Monomorphic sites: " + formatter.format(task.getMonomorphic()) + "<br>");
-		text.append("Allele mismatch: " + formatter.format(task.getAlleleMismatch()) + "<br>");
+		text.append("<b>Filtered sites:</b> \n");
+		text.append("Filter flag set: " + formatter.format(task.getFilterFlag()) + "\n");
+		text.append("Invalid alleles: " + formatter.format(task.getInvalidAlleles()) + "\n");
+		text.append("Multiallelic sites: " + formatter.format(task.getMultiallelicSites()) + "\n");
+		text.append("Duplicated sites: " + formatter.format(task.getDuplicates()) + "\n");
+		text.append("NonSNP sites: " + formatter.format(task.getNoSnps()) + "\n");
+		text.append("Monomorphic sites: " + formatter.format(task.getMonomorphic()) + "\n");
+		text.append("Allele mismatch: " + formatter.format(task.getAlleleMismatch()) + "\n");
 		text.append("SNPs call rate < 90%: " + formatter.format(task.getLowCallRate()));
 
 		context.ok(text.toString());
 
 		text = new StringBuffer();
 
-		text.append("Excluded sites in total: " + formatter.format(task.getFiltered()) + "<br>");
-		text.append("Remaining sites in total: " + formatter.format(task.getOverallSnps()) + "<br>");
+		text.append("Excluded sites in total: " + formatter.format(task.getFiltered()) + "\n");
+		text.append("Remaining sites in total: " + formatter.format(task.getOverallSnps()) + "\n");
 
 		if (task.getFiltered() > 0) {
 			text.append(
-					"See " + context.createLinkToFile("statisticDir", "snps-excluded.txt") + " for details" + "<br>");
+					"See " + context.createLinkToFile("statisticDir", "snps-excluded.txt") + " for details" + "\n");
 		}
 
 		if (task.getNotFoundInLegend() > 0) {
-			text.append("Typed only sites: " + formatter.format(task.getNotFoundInLegend()) + "<br>");
-			text.append("See " + context.createLinkToFile("statisticDir", "typed-only.txt") + " for details" + "<br>");
+			text.append("Typed only sites: " + formatter.format(task.getNotFoundInLegend()) + "\n");
+			text.append("See " + context.createLinkToFile("statisticDir", "typed-only.txt") + " for details" + "\n");
 		}
 
 		if (task.getRemovedChunksSnps() > 0) {
 
-			text.append("<br><b>Warning:</b> " + formatter.format(task.getRemovedChunksSnps())
+			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksSnps())
 
 					+ " Chunk(s) excluded: < " + minSnps + " SNPs (see "
 					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + "  for details).");
@@ -275,7 +278,7 @@ public class FastQualityControl extends WorkflowStep {
 
 		if (task.getRemovedChunksCallRate() > 0) {
 
-			text.append("<br><b>Warning:</b> " + formatter.format(task.getRemovedChunksCallRate())
+			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksCallRate())
 
 					+ " Chunk(s) excluded: at least one sample has a call rate < " + (sampleCallrate * 100) + "% (see "
 					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + " for details).");
@@ -283,7 +286,7 @@ public class FastQualityControl extends WorkflowStep {
 
 		if (task.getRemovedChunksOverlap() > 0) {
 
-			text.append("<br><b>Warning:</b> " + formatter.format(task.getRemovedChunksOverlap())
+			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksOverlap())
 
 					+ " Chunk(s) excluded: reference overlap < " + (referenceOverlap * 100) + "% (see "
 					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + " for details).");
@@ -295,13 +298,13 @@ public class FastQualityControl extends WorkflowStep {
 		long overallChunks = task.getOverallChunks();
 
 		if (excludedChunks > 0) {
-			text.append("<br>Remaining chunk(s): " + formatter.format(overallChunks - excludedChunks));
+			text.append("\nRemaining chunk(s): " + formatter.format(overallChunks - excludedChunks));
 
 		}
 
 		if (excludedChunks == overallChunks) {
 
-			text.append("<br><b>Error:</b> No chunks passed the QC step. Imputation cannot be started!");
+			text.append("\n<b>Error:</b> No chunks passed the QC step. Imputation cannot be started!");
 			context.error(text.toString());
 
 			return false;
@@ -309,7 +312,7 @@ public class FastQualityControl extends WorkflowStep {
 		}
 		// strand flips (normal flip & allele switch + strand flip)
 		else if (task.getStrandFlipSimple() + task.getStrandFlipAndAlleleSwitch() > strandFlips) {
-			text.append("<br><b>Error:</b> More than " + strandFlips
+			text.append("\n<b>Error:</b> More than " + strandFlips
 					+ " obvious strand flips have been detected. Please check strand. Imputation cannot be started!");
 			context.error(text.toString());
 
@@ -318,7 +321,7 @@ public class FastQualityControl extends WorkflowStep {
 
 		else if (task.isChrXMissingRate()) {
 			text.append(
-					"<br><b>Error:</b> Chromosome X nonPAR region includes > 10 % mixed genotypes. Imputation cannot be started!");
+					"\n<b>Error:</b> Chromosome X nonPAR region includes > 10 % mixed genotypes. Imputation cannot be started!");
 			context.error(text.toString());
 
 			return false;
@@ -326,7 +329,7 @@ public class FastQualityControl extends WorkflowStep {
 
 		else if (task.isChrXPloidyError()) {
 			text.append(
-					"<br><b>Error:</b> ChrX nonPAR region includes ambiguous samples (haploid and diploid positions). Imputation cannot be started! See "
+					"\n<b>Error:</b> ChrX nonPAR region includes ambiguous samples (haploid and diploid positions). Imputation cannot be started! See "
 							+ context.createLinkToFile("statisticDir", "chrX-info.txt"));
 			context.error(text.toString());
 

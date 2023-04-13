@@ -8,11 +8,10 @@ import java.util.Vector;
 
 import cloudgene.sdk.internal.WorkflowContext;
 import cloudgene.sdk.internal.WorkflowStep;
-import genepi.imputationserver.steps.imputation.ImputationPipeline;
+import genepi.imputationserver.Main;
 import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.DefaultPreferenceStore;
-import genepi.imputationserver.util.ImputationParameters;
 import genepi.imputationserver.util.PgsPanel;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.importer.ImporterFactory;
@@ -22,18 +21,8 @@ public class InputValidation extends WorkflowStep {
 
 	@Override
 	public boolean run(WorkflowContext context) {
-		String phasingEngine = context.get("phasing");
 
-		ImputationParameters imputationParameters = new ImputationParameters();
-
-		imputationParameters.setPhasing(phasingEngine);
-
-		context.log("Versions:");
-		context.log("  Pipeline: " + ImputationPipeline.PIPELINE_VERSION);
-		context.log("  Imputation-Engine: " + ImputationPipeline.IMPUTATION_VERSION);
-		if(phasingEngine != null) {
-		context.log("  Phasing-Engine: " + imputationParameters.getPhasingMethod());
-		}
+		context.log(Main.APP + " " + Main.VERSION);
 
 		if (!checkParameters(context)) {
 			return false;
@@ -277,8 +266,8 @@ public class InputValidation extends WorkflowStep {
 
 			if (!panel.supportsPopulation(population)) {
 				StringBuilder report = new StringBuilder();
-				report.append(
-						"Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.\n");
+				report.append("Population '" + population + "' is not supported by reference panel '" + panel.getId()
+						+ "'.\n");
 				if (panel.getPopulations() != null) {
 					report.append("Available populations:");
 					for (String pop : panel.getPopulations().values()) {

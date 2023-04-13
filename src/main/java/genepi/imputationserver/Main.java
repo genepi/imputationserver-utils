@@ -3,16 +3,18 @@ package genepi.imputationserver;
 import java.lang.reflect.InvocationTargetException;
 
 import genepi.base.Toolbox;
-import genepi.imputationserver.steps.imputation.ImputationPipeline;
-import genepi.imputationserver.tools.VersionTool;
 
 public class Main extends Toolbox {
 
+	public static String APP = "imputationserver-utils";
+	
+	public static String VERSION = "1.7.0";
+	
 	public Main(String command, String[] args) {
 		super(command, args);
 		
 		System.out.println();
-		System.out.println(ImputationPipeline.PIPELINE_VERSION);
+		System.out.println(Main.APP + " " + Main.VERSION);
 		System.out.println("https://imputationserver.sph.umich.edu");
 		System.out.println("Lukas Forer, Sebastian Schoenherr and Christian Fuchsberger");
 		
@@ -21,9 +23,7 @@ public class Main extends Toolbox {
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, SecurityException,
 			NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
 
-		Main main = new Main("imputationserver.jar", args);
-		main.addTool("version", VersionTool.class);
-
+		Main main = new Main("imputationserver-utils.jar", args);
 		main.start();
 	}
 }
