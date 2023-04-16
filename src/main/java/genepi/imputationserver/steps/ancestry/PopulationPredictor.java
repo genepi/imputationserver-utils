@@ -24,7 +24,7 @@ public class PopulationPredictor {
 
 	private int K = 10;
 
-	private double WEIGHT_THRESHOLD = 0.75; //0.875
+	private double weightThreshold = 0.75; //0.875
 
 	public PopulationPredictor() {
 
@@ -82,7 +82,7 @@ public class PopulationPredictor {
 			Neighbor[] neighbors = getNearestNeighbors(samples, pcs, K);
 			PredictedPopulation[] voting = getVoting(neighbors);
 			writer.setString("sample", id);
-			if (voting[0].getWeight() >= WEIGHT_THRESHOLD) {
+			if (voting[0].getWeight() >= weightThreshold) {
 				writer.setString("population", voting[0].getLabel());
 			} else {
 				writer.setString("population", LABEL_UNKNOWN);
@@ -115,6 +115,14 @@ public class PopulationPredictor {
 	
 	public void setMaxPcs(int maxPcs) {
 		this.maxPcs = maxPcs;
+	}
+	
+	public void setK(int k) {
+		K = k;
+	}
+	
+	public void setWeightThreshold(double weightThreshold) {
+		this.weightThreshold = weightThreshold;
 	}
 
 	protected PredictedPopulation[] getVoting(Neighbor[] neighbors) {

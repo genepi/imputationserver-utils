@@ -15,6 +15,10 @@ public class PopulationPredictorStep extends WorkflowStep {
 		predictor.setStudyFile(context.get("study_pc"));
 		int pcs = Integer.parseInt(context.get("max_pcs"));
 		predictor.setMaxPcs(pcs);
+		int k = Integer.parseInt(context.get("k"));
+		predictor.setK(k);
+		double threshold = Double.parseDouble(context.get("threshold"));
+		predictor.setWeightThreshold(threshold);
 		predictor.predictPopulation(context.get("output"));
 		return true;
 
