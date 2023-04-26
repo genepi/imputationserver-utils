@@ -175,9 +175,8 @@ public class FastQualityControlTest extends AbstractTestcase {
 
 		File[] files = new File(out).listFiles();
 		Arrays.sort(files);
-
 		// baseline from a earlier job execution
-		int[] array = { 4588, 968, 3002, 5781, 5116, 4750, 5699, 5174, 6334, 3188, 5106, 5832, 5318 };
+		int[] array = { 4750, 5174, 5106, 5832, 5318, 4588, 968, 3002, 5781, 5116, 5699, 6334, 3188 };
 		int pos = 0;
 
 		for (File file : files) {
