@@ -14,7 +14,7 @@ public class VcfChunk {
 
 	private int end;
 
-	private DecimalFormat nf = new DecimalFormat("#0000000000");
+	public static DecimalFormat nf = new DecimalFormat("#0000000000");
 
 	private int snps = 0;
 
@@ -121,6 +121,10 @@ public class VcfChunk {
 	public BGzipLineWriter vcfChunkWriter;
 	public 	int lastPos = 0;
 	public boolean empty=true;
+
+	public static String format(long position) {
+		return nf.format(position);
+	}
 	
 
 }

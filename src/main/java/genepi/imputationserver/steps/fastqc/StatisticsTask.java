@@ -288,7 +288,7 @@ public class StatisticsTask implements ITask {
 
 		String chunkName = null;
 
-		chunkName = FileUtil.path(chunksDir, "chunk_" + chr + "_" + chunkStart + "_" + chunkEnd + ".vcf.gz");
+		chunkName = FileUtil.path(chunksDir, "chunk_" + chr + "_" +  VcfChunk.format(chunkStart) + "_" +  VcfChunk.format(chunkEnd) + ".vcf.gz");
 
 		// init chunk
 		VcfChunk chunk = new VcfChunk();

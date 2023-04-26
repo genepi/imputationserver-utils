@@ -3,6 +3,7 @@ package genepi.imputationserver.steps;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -401,6 +402,7 @@ public class CompressionEncryption extends WorkflowStep {
 				result.add(file.getAbsolutePath());
 			}
 		}
+		Collections.sort(result);
 		return result;
 	}
 
