@@ -8,7 +8,7 @@ public class Main extends Toolbox {
 
 	public static String APP = "imputationserver-utils";
 	
-	public static String VERSION = "1.1.2";
+	public static String VERSION = "1.1.3";
 	
 	public Main(String command, String[] args) {
 		super(command, args);
