@@ -17,9 +17,9 @@
 
 	<repositories>
 		<repository>
-			<id>jfrog-genepi-maven</id>
-			<name>jfrog-genepi-maven</name>
-			<url>https://genepi.jfrog.io/artifactory/maven/</url>
+			<id>genepi-maven</id>
+			<name>genepi-maven</name>
+			<url>https://genepi.i-med.ac.at/maven</url>
 		</repository>
 
 		<repository>
@@ -70,7 +70,7 @@
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>genepi.imputationserver.Main</mainClass>
+									<mainClass>genepi.imputationserver.App</mainClass>
 								</transformer>
 							</transformers>
 
@@ -109,6 +109,12 @@
 			<groupId>cloudgene</groupId>
 			<artifactId>cloudgene-java-sdk</artifactId>
 			<version>1.2.2</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli</artifactId>
+			<version>4.7.5</version>
 		</dependency>
 
 		<dependency>

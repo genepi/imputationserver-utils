@@ -7,7 +7,7 @@ import java.util.Map;
 import cloudgene.sdk.internal.WorkflowStep;
 import genepi.imputationserver.steps.CompressionEncryption;
 import genepi.imputationserver.steps.FastQualityControl;
-import genepi.imputationserver.steps.InputValidation;
+import genepi.imputationserver.steps.InputValidationCommand;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
@@ -121,7 +121,7 @@ public class AbstractTestcase {
 
 	}
 
-	public class InputValidationMock extends InputValidation {
+	public class InputValidationMock extends InputValidationCommand {
 
 		private String folder;
 

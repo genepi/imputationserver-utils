@@ -1,8 +1,14 @@
 package genepi.imputationserver.util;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 public class RefPanel {
 
@@ -273,6 +279,14 @@ public class RefPanel {
 
 			return null;
 		}
+	}
+
+	public static RefPanel loadFromJson(String filename) throws JsonSyntaxException, JsonIOException, IOException {
+		Gson gson = (new GsonBuilder()).create();
+		Map<String, Object> refPanelMap = gson.fromJson(new FileReader(filename), Map.class);
+
+		return loadFromProperties(refPanelMap);
+
 	}
 
 }

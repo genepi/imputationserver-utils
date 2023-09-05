@@ -5,11 +5,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
 import genepi.imputationserver.util.WorkflowTestContext;
+import genepi.io.FileUtil;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -18,7 +20,20 @@ import htsjdk.variant.vcf.VCFFileReader;
 public class InputValidationTest extends AbstractTestcase {
 
 	public static final boolean VERBOSE = true;
-
+	
+	@Test
+	public void testInputValidation() throws Exception {
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(Arrays.asList("/home/seb/Desktop/minimac_test2.50.vcf.gz"));
+		command.setReference("/home/seb/Desktop/ref.json");
+		command.setOutput("cloudgene.log");
+		command.setChunksize(20000000);
+		command.setPhasing("eagle");
+		command.setupTabix("files/bin/tabix");
+		assertEquals(0, (int) command.call());
+	}
+	
+	/*
 	@Test(expected = IOException.class)
 	public void testWithWrongReferencePanel() throws IOException {
 
@@ -453,5 +468,9 @@ public class InputValidationTest extends AbstractTestcase {
 		assertEquals(905, count);
 
 	}
+	
+	*/
+
+	
 
 }

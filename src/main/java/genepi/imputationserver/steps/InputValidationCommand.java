@@ -1,75 +1,143 @@
 package genepi.imputationserver.steps;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.Callable;
+
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 import cloudgene.sdk.internal.WorkflowContext;
-import cloudgene.sdk.internal.WorkflowStep;
-import genepi.imputationserver.Main;
+import cloudgene.sdk.weblog.WebWorkflowContext;
+import cloudgene.sdk.weblog.collectors.FileLog;
 import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
-import genepi.imputationserver.util.DefaultPreferenceStore;
-import genepi.imputationserver.util.PgsPanel;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.importer.ImporterFactory;
 import genepi.io.FileUtil;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-public class InputValidation extends WorkflowStep {
+@Command
+public class InputValidationCommand implements Callable<Integer> {
+
+	public InputValidationCommand() {
+		VcfFileUtil.setTabixBinary("tabix");
+	}
+
+	@Parameters(description = "VCF files")
+	List<String> files;
+
+	@Option(names = "--population", description = "Reference Population", required = true)
+	private String population;
+
+	@Option(names = "--reference", description = "Reference Panel", required = true)
+	private String reference;
+
+	@Option(names = "--build", description = "Build", required = false)
+	private String build;
+
+	@Option(names = "--r2Filter", description = "r2 Filter", required = false)
+	private String r2Filter;
+
+	@Option(names = "--phasing", description = "Phasing", required = false)
+	private String phasing = "eagle";
+
+	@Option(names = "--mode", description = "Mode", required = false)
+	private String mode;
+
+	@Option(names = "--chunksize", description = "Chunksize", required = false)
+	private int chunksize = 20000000;
+
+	@Option(names = "--maxSamples", description = "Max Samples", required = false)
+	private int maxSamples;
+
+	@Option(names = "--contactName", description = "Contact Name", required = false)
+	private String contactName;
+
+	@Option(names = "--contactEmail", description = "Contact Mail", required = false)
+	private String contactEmail;
+
+	@Option(names = "--output", description = "Log Output", required = false)
+	private String output = "cloudgene.log";
+
+	public void setFiles(List<String> files) {
+		this.files = files;
+	}
+
+	public void setOutput(String output) {
+		this.output = output;
+	}
+
+	public void setPhasing(String phasing) {
+		this.phasing = phasing;
+	}
+
+	public void setPopulation(String population) {
+		this.population = population;
+	}
+
+	public void setReference(String reference) {
+		this.reference = reference;
+	}
+
+	public void setBuild(String build) {
+		this.build = build;
+	}
+
+	public void setR2Filter(String r2Filter) {
+		this.r2Filter = r2Filter;
+	}
+
+	public void setMode(String mode) {
+		this.mode = mode;
+	}
+
+	public void setChunksize(int chunksize) {
+		this.chunksize = chunksize;
+	}
+
+	public void setMaxSamples(int maxSamples) {
+		this.maxSamples = maxSamples;
+	}
+
+	public void setContactName(String contactName) {
+		this.contactName = contactName;
+	}
+
+	public void setContactEmail(String contactEmail) {
+		this.contactEmail = contactEmail;
+	}
+
+	WebWorkflowContext context = new WebWorkflowContext();
 
 	@Override
-	public boolean run(WorkflowContext context) {
+	public Integer call() throws Exception {
 
-		context.log(Main.APP + " " + Main.VERSION);
+		context.setCollector(new FileLog(output));
 
-		if (!checkParameters(context)) {
-			return false;
+		if (!checkParameters()) {
+			return -1;
 		}
 
-		if (!importVcfFiles(context)) {
-			return false;
+		if (!importVcfFiles()) {
+			return -1;
 		}
 
-		return checkVcfFiles(context);
+		return checkVcfFiles();
 
 	}
 
-	protected void setupTabix(String folder) {
-		VcfFileUtil.setTabixBinary(FileUtil.path(folder, "bin", "tabix"));
+	protected void setupTabix(String path) {
+		VcfFileUtil.setTabixBinary(path);
 	}
 
-	private boolean checkVcfFiles(WorkflowContext context) {
-		String folder = getFolder(InputValidation.class);
-		setupTabix(folder);
-		String files = context.get("files");
-		Object reference = context.getData("refpanel");
-		String population = context.get("population");
-		String build = context.get("build");
-		String r2Filter = context.get("r2Filter");
-		String phasing = context.get("phasing");
-		String mode = context.get("mode");
-		PgsPanel pgsPanel = PgsPanel.loadFromProperties(context.getData("pgsPanel"));
-
-		// load job.config
-		File jobConfig = new File(FileUtil.path(folder, "job.config"));
-		DefaultPreferenceStore store = new DefaultPreferenceStore();
-		if (jobConfig.exists()) {
-			store.load(jobConfig);
-		} else {
-			context.log("Configuration file '" + jobConfig.getAbsolutePath() + "' not available. Use default values.");
-		}
-
-		int chunkSize = 20000000;
-		if (store.getString("chunksize") != null) {
-			chunkSize = Integer.parseInt(store.getString("chunksize"));
-		}
-
-		int maxSamples = 0;
-		if (store.getString("samples.max") != null) {
-			maxSamples = Integer.parseInt(store.getString("samples.max"));
-		}
+	private int checkVcfFiles() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
 
 		List<VcfFile> validVcfFiles = new Vector<VcfFile>();
 
@@ -82,31 +150,23 @@ public class InputValidation extends WorkflowStep {
 
 		boolean phased = true;
 
-		String[] vcfFiles = FileUtil.getFiles(files, "*.vcf.gz$|*.vcf$");
-
-		if (vcfFiles.length == 0) {
-			context.endTask("The provided files are not VCF files (see <a href=\"/start.html#!pages/help\">Help</a>).",
-					WorkflowContext.ERROR);
-			return false;
-		}
-
-		Arrays.sort(vcfFiles);
+		Collections.sort(files);
 
 		String infos = null;
 
 		RefPanel panel = null;
 		try {
-			panel = RefPanel.loadFromProperties(reference);
+			panel = RefPanel.loadFromJson(reference);
 			if (panel == null) {
 				context.error("Reference not found.");
-				return false;
+				return -1;
 			}
 		} catch (Exception e) {
 			context.error("Unable to parse reference panel: " + e.getMessage());
-			return false;
+			return -1;
 		}
 
-		for (String filename : vcfFiles) {
+		for (String filename : files) {
 
 			if (infos == null) {
 				// first files, no infos available
@@ -119,7 +179,7 @@ public class InputValidation extends WorkflowStep {
 
 			try {
 
-				VcfFile vcfFile = VcfFileUtil.load(filename, chunkSize, true);
+				VcfFile vcfFile = VcfFileUtil.load(filename, chunksize, true);
 
 				if (VcfFileUtil.isChrMT(vcfFile.getChromosome())) {
 					vcfFile.setPhased(true);
@@ -141,7 +201,7 @@ public class InputValidation extends WorkflowStep {
 								"Please double check, if all uploaded VCF files include the same amount of samples ("
 										+ vcfFile.getNoSamples() + " vs " + noSamples + ")",
 								WorkflowContext.ERROR);
-						return false;
+						return -1;
 					}
 
 					noSamples = vcfFile.getNoSamples();
@@ -155,19 +215,16 @@ public class InputValidation extends WorkflowStep {
 						context.endTask(
 								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
 								WorkflowContext.ERROR);
-						return false;
+						return -1;
 					}
 
 					if (noSamples > maxSamples && maxSamples != 0) {
-
-						String contactName = store.getString("contact.name");
-						String contactEmail = store.getString("contact.email");
 
 						context.endTask("The maximum number of samples is " + maxSamples + ". Please contact "
 								+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
 								+ "</a>) to discuss this large imputation.", WorkflowContext.ERROR);
 
-						return false;
+						return -1;
 					}
 
 					if (build == null) {
@@ -178,23 +235,21 @@ public class InputValidation extends WorkflowStep {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
-						return false;
+						return -1;
 					}
 
 					if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
-						return false;
+						return -1;
 					}
 
 					infos = "Samples: " + noSamples + "\n" + "Chromosomes:" + chromosomeString + "\n" + "SNPs: "
 							+ noSnps + "\n" + "Chunks: " + chunks + "\n" + "Datatype: "
 							+ (phased ? "phased" : "unphased") + "\n" + "Build: " + (build == null ? "hg19" : build)
 							+ "\n" + "Reference Panel: " + panel.getId() + " (" + panel.getBuild() + ")" + "\n"
-							+ "Population: " + population + "\n" + "Phasing: eagle" + "\n" + "Mode: " + mode
-							+ (pgsPanel != null ? "\n" + "PGS-Calculation: " + pgsPanel.getScores().size() + " scores"
-									: "");
+							+ "Population: " + population + "\n" + "Phasing: eagle" + "\n" + "Mode: " + mode;
 
 					if (r2Filter != null && !r2Filter.isEmpty() && !r2Filter.equals("0")) {
 						infos += "\nRsq filter: " + r2Filter;
@@ -202,14 +257,13 @@ public class InputValidation extends WorkflowStep {
 
 				} else {
 					context.endTask("No valid chromosomes found!", WorkflowContext.ERROR);
-					return false;
+					return -1;
 				}
 
 			} catch (IOException e) {
-
 				context.endTask(e.getMessage() + " (see <a href=\"/start.html#!pages/help\">Help</a>).",
 						WorkflowContext.ERROR);
-				return false;
+				return -1;
 
 			}
 
@@ -221,7 +275,7 @@ public class InputValidation extends WorkflowStep {
 
 			if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
 				context.error("Your input data is unphased. Please select an algorithm for phasing.");
-				return false;
+				return -1;
 			}
 
 			// init counters
@@ -229,32 +283,27 @@ public class InputValidation extends WorkflowStep {
 			context.incCounter("genotypes", noSamples * noSnps);
 			context.incCounter("chromosomes", noSamples * chromosomes.size());
 			context.incCounter("runs", 1);
-			context.incCounter("refpanel_" + context.get("ref_panel"), 1);
+			context.incCounter("refpanel_" + panel.getId(), 1);
 			context.incCounter("phasing_" + "eagle", 1);
 
-			return true;
+			return 0;
 
 		} else {
 
 			context.endTask("The provided files are not VCF files  (see <a href=\"/start.html#!pages/help\">Help</a>).",
 					WorkflowContext.ERROR);
 
-			return false;
+			return -1;
 		}
 	}
 
-	private boolean checkParameters(WorkflowContext context) {
-
-		String folder = getFolder(InputValidation.class);
-		setupTabix(folder);
-		Object reference = context.getData("refpanel");
-		String population = context.get("population");
+	private boolean checkParameters() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
 
 		try {
 
 			RefPanel panel = null;
 			try {
-				panel = RefPanel.loadFromProperties(reference);
+				panel = RefPanel.loadFromJson(reference);
 				if (panel == null) {
 					context.error("Reference not found.");
 					return false;
@@ -286,11 +335,11 @@ public class InputValidation extends WorkflowStep {
 		return true;
 	}
 
-	private boolean importVcfFiles(WorkflowContext context) {
+	private boolean importVcfFiles() {
 
-		for (String input : context.getInputs()) {
+		for (String input : files) {
 
-			if (ImporterFactory.needsImport(context.get(input))) {
+			if (ImporterFactory.needsImport(input)) {
 
 				context.log("URL-based uploads are no longer supported. Please use direct file uploads instead.");
 				context.error("URL-based uploads are no longer supported. Please use direct file uploads instead.");
@@ -302,6 +351,10 @@ public class InputValidation extends WorkflowStep {
 
 		return true;
 
+	}
+
+	public String getFolder(Class clazz) {
+		return new File(clazz.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
 	}
 
 }
