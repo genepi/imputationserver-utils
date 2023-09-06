@@ -134,28 +134,6 @@ public class AbstractTestcase {
 
 	}
 
-	public class InputValidationMock extends InputValidationCommand {
-
-		private String folder;
-
-		public InputValidationMock(String folder) {
-			super();
-			this.folder = folder;
-		}
-
-		@Override
-		public String getFolder(Class clazz) {
-			// override folder with static folder instead of jar location
-			return folder;
-		}
-
-		@Override
-		protected void setupTabix(String folder) {
-			VcfFileUtil.setTabixBinary("files/bin/tabix");
-		}
-
-	}
-	
 	protected int getLineCount(String filename) throws IOException {
 		LineReader reader = new LineReader(filename);
 		int lines = 0;

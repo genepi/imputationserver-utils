@@ -10,7 +10,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
-import genepi.imputationserver.util.CloudgeneContext;
+import genepi.imputationserver.util.log.CloudgeneLog;
 import genepi.imputationserver.util.RefPanelUtil;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.util.TabixUtils;
@@ -18,6 +18,10 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 
 public class InputValidationTest extends AbstractTestcase {
+
+	private static final String TABIX_HOME = "files/bin/tabix";
+
+	private static final String CLOUDGENE_LOG = "cloudgene.log";
 
 	public static final boolean VERBOSE = true;
 
@@ -33,14 +37,14 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setBuild("hg38");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
 
-		assertTrue(cloudgeneContext.hasInMemory("This is not a valid hg38 encoding."));
-		assertTrue(cloudgeneContext.hasInMemory("[ERROR]"));
+		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg38 encoding."));
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
 
 	}
 
@@ -48,7 +52,7 @@ public class InputValidationTest extends AbstractTestcase {
 	public void testWithWrongReferencePanel() throws IOException {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
-
+//		TODO: test how command handles wrong filename --> nor RefPanelUtil.
 		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "missing-reference-panel");
 
 	}
@@ -66,13 +70,13 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setReference(panel);
 		command.setBuild("hg19");
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("This is not a valid hg19 encoding."));
-		assertTrue(cloudgeneContext.hasInMemory("[ERROR]"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg19 encoding."));
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
 
 	}
 
@@ -88,13 +92,13 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[ERROR] Unable to parse header with error"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Unable to parse header with error"));
 
 	}
 
@@ -110,7 +114,7 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("mixed");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
@@ -128,7 +132,7 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("mixed");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
@@ -146,14 +150,13 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("aas");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext
-				.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
 
 	}
 
@@ -169,14 +172,14 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("asn");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext
-				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(
+				CloudgeneLog.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
 
 	}
 
@@ -192,12 +195,12 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("asn");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog
 				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 
 	}
@@ -215,13 +218,13 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[ERROR] The provided VCF file is malformed"));
-		assertTrue(cloudgeneContext.hasInMemory("Error during index creation"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file is malformed"));
+		assertTrue(CloudgeneLog.hasInMemory("Error during index creation"));
 
 	}
 
@@ -237,12 +240,12 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
 
 	}
 
@@ -258,19 +261,19 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
-		assertTrue(cloudgeneContext.hasInMemory("Samples: 41"));
-		assertTrue(cloudgeneContext.hasInMemory("Chromosomes: 1"));
-		assertTrue(cloudgeneContext.hasInMemory("SNPs: 905"));
-		assertTrue(cloudgeneContext.hasInMemory("Chunks: 1"));
-		assertTrue(cloudgeneContext.hasInMemory("Datatype: unphased"));
-		assertTrue(cloudgeneContext.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(cloudgeneContext.hasInMemory("Phasing: eagle"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
+		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 1"));
+		assertTrue(CloudgeneLog.hasInMemory("SNPs: 905"));
+		assertTrue(CloudgeneLog.hasInMemory("Chunks: 1"));
+		assertTrue(CloudgeneLog.hasInMemory("Datatype: unphased"));
+		assertTrue(CloudgeneLog.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(CloudgeneLog.hasInMemory("Phasing: eagle"));
 
 	}
 
@@ -286,19 +289,19 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[OK] 3 valid VCF file(s) found."));
-		assertTrue(cloudgeneContext.hasInMemory("Samples: 41"));
-		assertTrue(cloudgeneContext.hasInMemory("Chromosomes: 2 3 4"));
-		assertTrue(cloudgeneContext.hasInMemory("SNPs: 2715"));
-		assertTrue(cloudgeneContext.hasInMemory("Chunks: 3"));
-		assertTrue(cloudgeneContext.hasInMemory("Datatype: unphased"));
-		assertTrue(cloudgeneContext.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(cloudgeneContext.hasInMemory("Phasing: eagle"));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[OK] 3 valid VCF file(s) found."));
+		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
+		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 2 3 4"));
+		assertTrue(CloudgeneLog.hasInMemory("SNPs: 2715"));
+		assertTrue(CloudgeneLog.hasInMemory("Chunks: 3"));
+		assertTrue(CloudgeneLog.hasInMemory("Datatype: unphased"));
+		assertTrue(CloudgeneLog.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(CloudgeneLog.hasInMemory("Phasing: eagle"));
 
 	}
 
@@ -316,12 +319,12 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
 
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/chr20.R50.merged.1.330k.recode.small.vcf.gz";
@@ -355,12 +358,12 @@ public class InputValidationTest extends AbstractTestcase {
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setPopulation("eur");
-		command.setupTabix("files/bin/tabix");
+		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/minimac_test.50.vcf.gz";
 		VCFFileReader vcfReader = new VCFFileReader(new File(vcfFilename),
