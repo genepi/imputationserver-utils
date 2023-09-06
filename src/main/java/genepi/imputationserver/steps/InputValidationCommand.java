@@ -1,7 +1,6 @@
 package genepi.imputationserver.steps;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -9,8 +8,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import cloudgene.sdk.internal.WorkflowContext;
 import cloudgene.sdk.weblog.WebWorkflowContext;
@@ -95,7 +93,7 @@ public class InputValidationCommand implements Callable<Integer> {
 				context.error("Reference not found.");
 			}
 		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + e.getMessage());
+			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
 		}
 	}
 
@@ -137,9 +135,13 @@ public class InputValidationCommand implements Callable<Integer> {
 				panel = RefPanel.loadFromJson(reference);
 				if (panel == null) {
 					context.error("Reference not found.");
+					context.close();
+					return -1;
 				}
 			} catch (Exception e) {
-				context.error("Unable to parse reference panel: " + e.getMessage());
+				context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+				context.close();
+				return -1;
 			}
 		}
 
@@ -163,7 +165,7 @@ public class InputValidationCommand implements Callable<Integer> {
 		VcfFileUtil.setTabixBinary(path);
 	}
 
-	private boolean checkVcfFiles() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+	private boolean checkVcfFiles() throws Exception {
 
 		List<VcfFile> validVcfFiles = new Vector<VcfFile>();
 
@@ -183,11 +185,13 @@ public class InputValidationCommand implements Callable<Integer> {
 
 			if (infos == null) {
 				// first files, no infos available
-				context.updateTask("Analyze file " + FileUtil.getFilename(filename) + "...", WorkflowContext.RUNNING);
+				context.updateTask(
+						"Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename)) + "...",
+						WorkflowContext.RUNNING);
 
 			} else {
-				context.updateTask("Analyze file " + FileUtil.getFilename(filename) + "...\n\n" + infos,
-						WorkflowContext.RUNNING);
+				context.updateTask("Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename))
+						+ "...\n\n" + infos, WorkflowContext.RUNNING);
 			}
 
 			try {
@@ -214,6 +218,7 @@ public class InputValidationCommand implements Callable<Integer> {
 								"Please double check, if all uploaded VCF files include the same amount of samples ("
 										+ vcfFile.getNoSamples() + " vs " + noSamples + ")",
 								WorkflowContext.ERROR);
+						context.close();
 						return false;
 					}
 
@@ -228,6 +233,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask(
 								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
 								WorkflowContext.ERROR);
+						context.close();
 						return false;
 					}
 
@@ -236,7 +242,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask("The maximum number of samples is " + maxSamples + ". Please contact "
 								+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
 								+ "</a>) to discuss this large imputation.", WorkflowContext.ERROR);
-
+						context.close();
 						return false;
 					}
 
@@ -244,6 +250,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
+						context.close();
 						return false;
 					}
 
@@ -251,6 +258,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
+						context.close();
 						return false;
 					}
 
@@ -266,13 +274,14 @@ public class InputValidationCommand implements Callable<Integer> {
 
 				} else {
 					context.endTask("No valid chromosomes found!", WorkflowContext.ERROR);
+					context.close();
 					return false;
 				}
 
 			} catch (IOException e) {
-				e.printStackTrace();
-				context.endTask(e.getMessage() + " (see <a href=\"/start.html#!pages/help\">Help</a>).",
-						WorkflowContext.ERROR);
+				context.endTask(StringEscapeUtils.escapeHtml(e.getMessage())
+						+ " (see <a href=\"/start.html#!pages/help\">Help</a>).", WorkflowContext.ERROR);
+				context.close();
 				return false;
 
 			}
@@ -285,6 +294,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 			if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
 				context.error("Your input data is unphased. Please select an algorithm for phasing.");
+				context.close();
 				return false;
 			}
 
@@ -295,19 +305,19 @@ public class InputValidationCommand implements Callable<Integer> {
 			context.incCounter("runs", 1);
 			context.incCounter("refpanel_" + panel.getId(), 1);
 			context.incCounter("phasing_" + "eagle", 1);
-
+			context.close();
 			return true;
 
 		} else {
 
 			context.endTask("The provided files are not VCF files  (see <a href=\"/start.html#!pages/help\">Help</a>).",
 					WorkflowContext.ERROR);
-
+			context.close();
 			return false;
 		}
 	}
 
-	private boolean checkParameters() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+	private boolean checkParameters() throws Exception {
 
 		try {
 
@@ -322,18 +332,20 @@ public class InputValidationCommand implements Callable<Integer> {
 					}
 				}
 				context.error(report.toString());
+				context.close();
 				return false;
 			}
 
 		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + e.getMessage());
+			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+			context.close();
 			return false;
 		}
 
 		return true;
 	}
 
-	private boolean importVcfFiles() {
+	private boolean importVcfFiles() throws Exception {
 
 		for (String input : files) {
 
@@ -341,7 +353,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 				context.log("URL-based uploads are no longer supported. Please use direct file uploads instead.");
 				context.error("URL-based uploads are no longer supported. Please use direct file uploads instead.");
-
+				context.close();
 				return false;
 			}
 

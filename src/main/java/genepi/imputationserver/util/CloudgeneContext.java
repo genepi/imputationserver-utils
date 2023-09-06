@@ -1,23 +1,25 @@
 package genepi.imputationserver.util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Scanner;
+
+import genepi.io.text.LineReader;
 
 public class CloudgeneContext {
 
 	ArrayList<String> lines = new ArrayList<String>();
 
 	public CloudgeneContext(String filename) {
-		Scanner scanner;
+		LineReader reader;
 		try {
-			scanner = new Scanner(new File(filename)).useDelimiter(",\\s*");
-			while (scanner.hasNext()) {
-				lines.add(scanner.next());
+			reader = new LineReader(filename);
+			while (reader.next()) {
+				lines.add(reader.get());
 			}
-			scanner.close();
-		} catch (FileNotFoundException e) {
+			reader.close();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

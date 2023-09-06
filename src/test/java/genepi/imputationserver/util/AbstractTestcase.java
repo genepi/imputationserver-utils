@@ -2,6 +2,7 @@ package genepi.imputationserver.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 import cloudgene.sdk.internal.WorkflowStep;
@@ -23,6 +24,18 @@ public class AbstractTestcase {
 	protected boolean run(WorkflowTestContext context, WorkflowStep step) {
 		step.setup(context);
 		return step.run(context);
+	}
+	
+	protected ArrayList<String> getFiles(String inputFolder) {
+		File folder = new File(inputFolder);
+		ArrayList<String> files = new ArrayList<String>();
+		
+		for (File file : folder.listFiles()){
+			if(file.getName().endsWith("vcf.gz")) {
+			files.add(file.getAbsolutePath());
+			}
+		}
+		return files;
 	}
 
 	protected WorkflowTestContext buildContext(String folder, String configFolder, String refpanel) throws IOException {

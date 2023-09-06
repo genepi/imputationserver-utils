@@ -5,8 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.Test;
@@ -14,442 +12,316 @@ import org.junit.Test;
 import genepi.imputationserver.util.AbstractTestcase;
 import genepi.imputationserver.util.CloudgeneContext;
 import genepi.imputationserver.util.RefPanelUtil;
+import htsjdk.samtools.util.CloseableIterator;
+import htsjdk.tribble.util.TabixUtils;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFFileReader;
 
 public class InputValidationTest extends AbstractTestcase {
 
 	public static final boolean VERBOSE = true;
-	/*
-	@Test
-	public void testInputValidation() throws Exception {
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(Arrays.asList("/home/seb/Desktop/minimac_test2.50.vcf.gz"));
-		command.setReference("/home/seb/Desktop/config.json");
-		command.setOutput("cloudgene.log");
-		command.setChunksize(20000000);
-		command.setPhasing("eagle");
-		command.setupTabix("files/bin/tabix");
-		assertEquals(0, (int) command.call());
-	}
-	*/
-	
+
 	@Test
 	public void testHg19DataWithBuild38() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/three";
-		
-		getFiles(inputFolder);
-		
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",  "hapmap2");
+
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
 		InputValidationCommand command = new InputValidationCommand();
 		command.setFiles(getFiles(inputFolder));
 		command.setReference(panel);
 		command.setBuild("hg38");
 		command.setupTabix("files/bin/tabix");
-		
+
 		assertEquals(-1, (int) command.call());
-		
+
 		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
-		
-		cloudgeneContext.print();
-		
+
 		assertTrue(cloudgeneContext.hasInMemory("This is not a valid hg38 encoding."));
-		//assertTrue(context.hasInMemory("[ERROR]"));
-		//assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test2.50.vcf.gz"));
+		assertTrue(cloudgeneContext.hasInMemory("[ERROR]"));
 
 	}
 
-	private ArrayList<String> getFiles(String inputFolder) {
-		File folder = new File(inputFolder);
-		ArrayList<String> files = new ArrayList<String>();
-		
-		for (File file : folder.listFiles()){
-			if(file.getName().endsWith("vcf.gz")) {
-			files.add(file.getAbsolutePath());
-			}
-		}
-		return files;
-	}
-	
-	/*
 	@Test(expected = IOException.class)
 	public void testWithWrongReferencePanel() throws IOException {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
-		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		buildContext(inputFolder, configFolder, "missing-reference-panel");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "missing-reference-panel");
 
 	}
 
 	@Test
-	public void testHg19DataWithBuild38() throws IOException {
-
-		String configFolder = "test-data/configs/hapmap-chr1";
-		String inputFolder = "test-data/data/three";
-
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
-		context.setInput("build", "hg38");
-
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
-
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
-
-		// check analyze task
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test2.50.vcf.gz"));
-
-		// check error message
-		assertTrue(context.hasInMemory("[ERROR]"));
-		assertTrue(context.hasInMemory("This is not a valid hg38 encoding."));
-
-	}
-
-	public void testHg38DataWithBuild19() throws IOException {
+	public void testHg38DataWithBuild19() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr20";
 		String inputFolder = "test-data/data/chr20-unphased-hg38";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
-		context.setInput("build", "hg19");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setBuild("hg19");
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(-1, (int) command.call());
 
-		// check if step is failed
-		assertEquals(false, result);
-
-		// check analyze task
-		assertTrue(context.hasInMemory("[RUN] Analyze file chr20.R50.merged.1.330k.recode.unphased.small.hg38.vcf.gz"));
-
-		// check error message
-		// check error message
-		assertTrue(context.hasInMemory("[ERROR]"));
-		assertTrue(context.hasInMemory("This is not a valid hg19 encoding."));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("This is not a valid hg19 encoding."));
+		assertTrue(cloudgeneContext.hasInMemory("[ERROR]"));
 
 	}
 
 	@Test
-	public void testWrongFiles() throws IOException {
+	public void testWrongVcfFile() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
-		// input folder contains no vcf or vcf.gz files
-		String inputFolder = "test-data/data/wrong_files";
-
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
-
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
-
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
-
-		// check error message
-		assertTrue(context.hasInMemory("[ERROR] The provided files are not VCF files"));
-
-	}
-
-	@Test
-	public void testWrongVcfFile() throws IOException {
-
-		String configFolder = "test-data/configs/hapmap-chr1";
-		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/wrong_vcf";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
+		assertEquals(-1, (int) command.call());
 
 		// check error message
-		assertTrue(context.hasInMemory("[ERROR] Unable to parse header with error"));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[ERROR] Unable to parse header with error"));
 
 	}
 
 	@Test
-	public void testMixedPopulation() throws IOException {
+	public void testMixedPopulation() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hrc-fake");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		context.setInput("phasing", "eagle");
-		context.setInput("population", "mixed");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("mixed");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
-
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(true, result);
+		assertEquals(0, (int) command.call());
 
 	}
 
 	@Test
-	public void testCorrectHrcPopulation() throws IOException {
+	public void testCorrectHrcPopulation() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hrc-fake");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hrc-fake");
 
-		context.setInput("phasing", "eagle");
-		context.setInput("population", "eur");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("mixed");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
-
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(true, result);
+		assertEquals(0, (int) command.call());
 
 	}
 
 	@Test
-	public void testWrongHrcPopulation() throws IOException {
+	public void testWrongHrcPopulation() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hrc-fake");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hrc-fake");
 
-		context.setInput("phasing", "eagle");
-		context.setInput("population", "aas");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("aas");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		assertEquals(-1, (int) command.call());
 
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
-
-		assertTrue(context.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
+		// check error message
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext
+				.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
 
 	}
 
 	@Test
-	public void testWrong1KP3Population() throws IOException {
+	public void testWrong1KP3Population() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "phase3-fake");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase3-fake");
 
-		context.setInput("phasing", "eagle");
-		context.setInput("population", "asn");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("asn");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		assertEquals(-1, (int) command.call());
 
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
-
-		assertTrue(context.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
+		// check error message
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext
+				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
 
 	}
 
 	@Test
-	public void testWrongTopmedPopulation() throws IOException {
+	public void testWrongTopmedPopulation() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "TOPMedfreeze6-fake");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "TOPMedfreeze6-fake");
 
-		context.setInput("phasing", "eagle");
-		context.setInput("population", "asn");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("asn");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		assertEquals(-1, (int) command.call());
 
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(false, result);
-
-		assertTrue(context
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext
 				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 
 	}
 
 	@Test
-	public void testUnorderedVcfFile() throws IOException {
+	public void testUnorderedVcfFile() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/unorderd";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(-1, (int) command.call());
 
-		// check if step is failed
-		assertEquals(false, result);
-
-		// check error message
-		assertTrue(context.hasInMemory(" [ERROR] The provided VCF file is malformed"));
-		assertTrue(context.hasInMemory(" Error during index creation"));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[ERROR] The provided VCF file is malformed"));
+		assertTrue(cloudgeneContext.hasInMemory("Error during index creation"));
 
 	}
 
 	@Test
-	public void testWrongChromosomes() throws IOException {
+	public void testWrongChromosomes() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/wrong_chrs";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(-1, (int) command.call());
 
-		// check if step is failed
-		assertEquals(false, result);
-
-		// check analyze task
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test.50.vcf.gz"));
-
-		// check error message
-		assertTrue(context.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
 
 	}
 
 	@Test
-	public void testSingleUnphasedVcfWithEagle() throws IOException {
+	public void testSingleUnphasedVcfWithEagle() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		context.setInput("phasing", "eagle");
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		assertEquals(0, (int) command.call());
 
-		// run and test
-		boolean result = run(context, inputValidation);
-
-		// check if step is failed
-		assertEquals(true, result);
-
-		// check analyze task and results
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test.50.vcf.gz"));
-		assertTrue(context.hasInMemory("[OK] 1 valid VCF file(s) found."));
-
-		// check statistics
-		assertTrue(context.hasInMemory("Samples: 41"));
-		assertTrue(context.hasInMemory("Chromosomes: 1"));
-		assertTrue(context.hasInMemory("SNPs: 905"));
-		assertTrue(context.hasInMemory("Chunks: 1"));
-		assertTrue(context.hasInMemory("Datatype: unphased"));
-		assertTrue(context.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(context.hasInMemory("Phasing: eagle"));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		assertTrue(cloudgeneContext.hasInMemory("Samples: 41"));
+		assertTrue(cloudgeneContext.hasInMemory("Chromosomes: 1"));
+		assertTrue(cloudgeneContext.hasInMemory("SNPs: 905"));
+		assertTrue(cloudgeneContext.hasInMemory("Chunks: 1"));
+		assertTrue(cloudgeneContext.hasInMemory("Datatype: unphased"));
+		assertTrue(cloudgeneContext.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(cloudgeneContext.hasInMemory("Phasing: eagle"));
 
 	}
 
 	@Test
-	public void testThreeUnphasedVcfWithEagle() throws IOException {
+	public void testThreeUnphasedVcfWithEagle() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		String inputFolder = "test-data/data/three";
 		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
-		context.setInput("phasing", "eagle");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(0, (int) command.call());
 
-		// check if step is failed
-		assertEquals(true, result);
-
-		// check analyze task and results
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test2.50.vcf.gz"));
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test3.50.vcf.gz"));
-		assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test4.50.vcf.gz"));
-		assertTrue(context.hasInMemory("[OK] 3 valid VCF file(s) found."));
-
-		// check statistics
-		assertTrue(context.hasInMemory("Samples: 41"));
-		assertTrue(context.hasInMemory("Chromosomes: 2 3 4"));
-		assertTrue(context.hasInMemory("SNPs: 2715"));
-		assertTrue(context.hasInMemory("Chunks: 3"));
-		assertTrue(context.hasInMemory("Datatype: unphased"));
-		assertTrue(context.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(context.hasInMemory("Phasing: eagle"));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[OK] 3 valid VCF file(s) found."));
+		assertTrue(cloudgeneContext.hasInMemory("Samples: 41"));
+		assertTrue(cloudgeneContext.hasInMemory("Chromosomes: 2 3 4"));
+		assertTrue(cloudgeneContext.hasInMemory("SNPs: 2715"));
+		assertTrue(cloudgeneContext.hasInMemory("Chunks: 3"));
+		assertTrue(cloudgeneContext.hasInMemory("Datatype: unphased"));
+		assertTrue(cloudgeneContext.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(cloudgeneContext.hasInMemory("Phasing: eagle"));
 
 	}
 
 	@Test
-	public void testTabixIndexCreationChr20() throws IOException {
+	public void testTabixIndexCreationChr20() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/chr20-phased";
 
 		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(0, (int) command.call());
 
-		// check if step is failed
-		assertEquals(true, result);
-		assertTrue(context.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
 
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/chr20.R50.merged.1.330k.recode.small.vcf.gz";
@@ -470,26 +342,25 @@ public class InputValidationTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testTabixIndexCreationChr1() throws IOException {
+	public void testTabixIndexCreationChr1() throws Exception {
 
 		String configFolder = "test-data/configs/hapmap-chr1";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/single";
 
 		// create workflow context
-		WorkflowTestContext context = buildContext(inputFolder, configFolder, "hapmap2");
-		context.setInput("phasing", "eagle");
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
 
-		// create step instance
-		InputValidation inputValidation = new InputValidationMock(configFolder);
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setPopulation("eur");
+		command.setupTabix("files/bin/tabix");
 
-		// run and test
-		boolean result = run(context, inputValidation);
+		assertEquals(0, (int) command.call());
 
-		// check if step is failed
-		assertEquals(true, result);
-		assertTrue(context.hasInMemory("[OK] 1 valid VCF file(s) found."));
-
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		assertTrue(cloudgeneContext.hasInMemory("[OK] 1 valid VCF file(s) found."));
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/minimac_test.50.vcf.gz";
 		VCFFileReader vcfReader = new VCFFileReader(new File(vcfFilename),
@@ -507,9 +378,5 @@ public class InputValidationTest extends AbstractTestcase {
 		assertEquals(905, count);
 
 	}
-	
-	*/
-
-	
 
 }
