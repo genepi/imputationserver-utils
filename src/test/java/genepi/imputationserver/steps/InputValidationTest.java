@@ -5,32 +5,71 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
-import genepi.imputationserver.util.WorkflowTestContext;
-import genepi.io.FileUtil;
-import htsjdk.samtools.util.CloseableIterator;
-import htsjdk.tribble.util.TabixUtils;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFFileReader;
+import genepi.imputationserver.util.CloudgeneContext;
+import genepi.imputationserver.util.RefPanelUtil;
 
 public class InputValidationTest extends AbstractTestcase {
 
 	public static final boolean VERBOSE = true;
-	
+	/*
 	@Test
 	public void testInputValidation() throws Exception {
 		InputValidationCommand command = new InputValidationCommand();
 		command.setFiles(Arrays.asList("/home/seb/Desktop/minimac_test2.50.vcf.gz"));
-		command.setReference("/home/seb/Desktop/ref.json");
+		command.setReference("/home/seb/Desktop/config.json");
 		command.setOutput("cloudgene.log");
 		command.setChunksize(20000000);
 		command.setPhasing("eagle");
 		command.setupTabix("files/bin/tabix");
 		assertEquals(0, (int) command.call());
+	}
+	*/
+	
+	@Test
+	public void testHg19DataWithBuild38() throws Exception {
+
+		String configFolder = "test-data/configs/hapmap-chr1";
+		String inputFolder = "test-data/data/three";
+		
+		getFiles(inputFolder);
+		
+		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",  "hapmap2");
+
+		InputValidationCommand command = new InputValidationCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setReference(panel);
+		command.setBuild("hg38");
+		command.setupTabix("files/bin/tabix");
+		
+		assertEquals(-1, (int) command.call());
+		
+		CloudgeneContext cloudgeneContext = new CloudgeneContext("cloudgene.log");
+		
+		cloudgeneContext.print();
+		
+		assertTrue(cloudgeneContext.hasInMemory("This is not a valid hg38 encoding."));
+		//assertTrue(context.hasInMemory("[ERROR]"));
+		//assertTrue(context.hasInMemory("[RUN] Analyze file minimac_test2.50.vcf.gz"));
+
+	}
+
+	private ArrayList<String> getFiles(String inputFolder) {
+		File folder = new File(inputFolder);
+		ArrayList<String> files = new ArrayList<String>();
+		
+		for (File file : folder.listFiles()){
+			if(file.getName().endsWith("vcf.gz")) {
+			files.add(file.getAbsolutePath());
+			}
+		}
+		return files;
 	}
 	
 	/*

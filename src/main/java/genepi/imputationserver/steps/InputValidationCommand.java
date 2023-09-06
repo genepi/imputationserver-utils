@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 
@@ -40,31 +41,35 @@ public class InputValidationCommand implements Callable<Integer> {
 	private String reference;
 
 	@Option(names = "--build", description = "Build", required = false)
-	private String build;
+	private String build = "hg19";
 
 	@Option(names = "--r2Filter", description = "r2 Filter", required = false)
-	private String r2Filter;
+	private String r2Filter = "0";
 
 	@Option(names = "--phasing", description = "Phasing", required = false)
 	private String phasing = "eagle";
 
 	@Option(names = "--mode", description = "Mode", required = false)
-	private String mode;
+	private String mode = "n/a";
 
 	@Option(names = "--chunksize", description = "Chunksize", required = false)
 	private int chunksize = 20000000;
 
 	@Option(names = "--maxSamples", description = "Max Samples", required = false)
-	private int maxSamples;
+	private int maxSamples = 50000;
 
 	@Option(names = "--contactName", description = "Contact Name", required = false)
-	private String contactName;
+	private String contactName = "n/a";
 
 	@Option(names = "--contactEmail", description = "Contact Mail", required = false)
-	private String contactEmail;
+	private String contactEmail = "n/a";
 
 	@Option(names = "--output", description = "Log Output", required = false)
 	private String output = "cloudgene.log";
+
+	WebWorkflowContext context = new WebWorkflowContext();
+
+	RefPanel panel = null;
 
 	public void setFiles(List<String> files) {
 		this.files = files;
@@ -82,8 +87,16 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.population = population;
 	}
 
-	public void setReference(String reference) {
-		this.reference = reference;
+	public void setReference(Map<String, Object> reference) {
+
+		try {
+			panel = RefPanel.loadFromProperties(reference);
+			if (panel == null) {
+				context.error("Reference not found.");
+			}
+		} catch (Exception e) {
+			context.error("Unable to parse reference panel: " + e.getMessage());
+		}
 	}
 
 	public void setBuild(String build) {
@@ -114,12 +127,21 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.contactEmail = contactEmail;
 	}
 
-	WebWorkflowContext context = new WebWorkflowContext();
-
 	@Override
 	public Integer call() throws Exception {
 
 		context.setCollector(new FileLog(output));
+
+		if (panel == null) {
+			try {
+				panel = RefPanel.loadFromJson(reference);
+				if (panel == null) {
+					context.error("Reference not found.");
+				}
+			} catch (Exception e) {
+				context.error("Unable to parse reference panel: " + e.getMessage());
+			}
+		}
 
 		if (!checkParameters()) {
 			return -1;
@@ -129,7 +151,11 @@ public class InputValidationCommand implements Callable<Integer> {
 			return -1;
 		}
 
-		return checkVcfFiles();
+		if (!checkVcfFiles()) {
+			return -1;
+		} else {
+			return 0;
+		}
 
 	}
 
@@ -137,7 +163,7 @@ public class InputValidationCommand implements Callable<Integer> {
 		VcfFileUtil.setTabixBinary(path);
 	}
 
-	private int checkVcfFiles() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+	private boolean checkVcfFiles() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
 
 		List<VcfFile> validVcfFiles = new Vector<VcfFile>();
 
@@ -151,20 +177,7 @@ public class InputValidationCommand implements Callable<Integer> {
 		boolean phased = true;
 
 		Collections.sort(files);
-
 		String infos = null;
-
-		RefPanel panel = null;
-		try {
-			panel = RefPanel.loadFromJson(reference);
-			if (panel == null) {
-				context.error("Reference not found.");
-				return -1;
-			}
-		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + e.getMessage());
-			return -1;
-		}
 
 		for (String filename : files) {
 
@@ -201,7 +214,7 @@ public class InputValidationCommand implements Callable<Integer> {
 								"Please double check, if all uploaded VCF files include the same amount of samples ("
 										+ vcfFile.getNoSamples() + " vs " + noSamples + ")",
 								WorkflowContext.ERROR);
-						return -1;
+						return false;
 					}
 
 					noSamples = vcfFile.getNoSamples();
@@ -215,7 +228,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask(
 								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
 								WorkflowContext.ERROR);
-						return -1;
+						return false;
 					}
 
 					if (noSamples > maxSamples && maxSamples != 0) {
@@ -224,32 +237,28 @@ public class InputValidationCommand implements Callable<Integer> {
 								+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
 								+ "</a>) to discuss this large imputation.", WorkflowContext.ERROR);
 
-						return -1;
-					}
-
-					if (build == null) {
-						build = "hg19";
+						return false;
 					}
 
 					if (build.equals("hg19") && vcfFile.hasChrPrefix()) {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
-						return -1;
+						return false;
 					}
 
 					if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
 								+ vcfFile.getChromosome() + "'.", WorkflowContext.ERROR);
-						return -1;
+						return false;
 					}
 
 					infos = "Samples: " + noSamples + "\n" + "Chromosomes:" + chromosomeString + "\n" + "SNPs: "
 							+ noSnps + "\n" + "Chunks: " + chunks + "\n" + "Datatype: "
 							+ (phased ? "phased" : "unphased") + "\n" + "Build: " + (build == null ? "hg19" : build)
 							+ "\n" + "Reference Panel: " + panel.getId() + " (" + panel.getBuild() + ")" + "\n"
-							+ "Population: " + population + "\n" + "Phasing: eagle" + "\n" + "Mode: " + mode;
+							+ "Population: " + population + "\n" + "Phasing: " + phasing + "\n" + "Mode: " + mode;
 
 					if (r2Filter != null && !r2Filter.isEmpty() && !r2Filter.equals("0")) {
 						infos += "\nRsq filter: " + r2Filter;
@@ -257,13 +266,14 @@ public class InputValidationCommand implements Callable<Integer> {
 
 				} else {
 					context.endTask("No valid chromosomes found!", WorkflowContext.ERROR);
-					return -1;
+					return false;
 				}
 
 			} catch (IOException e) {
+				e.printStackTrace();
 				context.endTask(e.getMessage() + " (see <a href=\"/start.html#!pages/help\">Help</a>).",
 						WorkflowContext.ERROR);
-				return -1;
+				return false;
 
 			}
 
@@ -275,7 +285,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 			if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
 				context.error("Your input data is unphased. Please select an algorithm for phasing.");
-				return -1;
+				return false;
 			}
 
 			// init counters
@@ -286,32 +296,20 @@ public class InputValidationCommand implements Callable<Integer> {
 			context.incCounter("refpanel_" + panel.getId(), 1);
 			context.incCounter("phasing_" + "eagle", 1);
 
-			return 0;
+			return true;
 
 		} else {
 
 			context.endTask("The provided files are not VCF files  (see <a href=\"/start.html#!pages/help\">Help</a>).",
 					WorkflowContext.ERROR);
 
-			return -1;
+			return false;
 		}
 	}
 
 	private boolean checkParameters() throws JsonSyntaxException, JsonIOException, FileNotFoundException {
 
 		try {
-
-			RefPanel panel = null;
-			try {
-				panel = RefPanel.loadFromJson(reference);
-				if (panel == null) {
-					context.error("Reference not found.");
-					return false;
-				}
-			} catch (Exception e) {
-				context.error("Unable to parse reference panel: " + e.getMessage());
-				return false;
-			}
 
 			if (!panel.supportsPopulation(population)) {
 				StringBuilder report = new StringBuilder();
