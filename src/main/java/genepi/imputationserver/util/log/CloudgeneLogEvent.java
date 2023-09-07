@@ -20,7 +20,11 @@ public class CloudgeneLogEvent {
 
 		PRINTLN,
 
-		LOG
+		LOG,
+		
+		OK,
+		
+		WARNING
 
 	}
 

@@ -39,7 +39,7 @@ public class TraceStep extends WorkflowStep {
 
 	public boolean prepareTraceJobs(WorkflowContext context) {
 
-		String folder = getFolder(FastQualityControl.class);
+		String folder = getFolder(QualityControlCommand.class);
 		setupTabix(folder);
 
 		String genotypes = context.get("files");

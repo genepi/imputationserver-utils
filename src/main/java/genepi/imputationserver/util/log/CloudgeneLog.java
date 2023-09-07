@@ -72,7 +72,7 @@ public class CloudgeneLog {
 	public void log(String line) {
 		addEvent(WebCommand.LOG, line);
 	}
-
+	
 	public void incCounter(String name, int value) {
 		addEvent(WebCommand.INC_COUNTER, name, value);
 	}
@@ -85,8 +85,16 @@ public class CloudgeneLog {
 		addEvent(WebCommand.MESSAGE, message, type);
 	}
 
+	public void ok(String message) {
+		addEvent(WebCommand.MESSAGE, message, OK);
+	}
+	
 	public void error(String message) {
 		addEvent(WebCommand.MESSAGE, message, ERROR);
+	}
+	
+	public void warning(String message) {
+		addEvent(WebCommand.MESSAGE, message, WARNING);
 	}
 
 	public void beginTask(String name) {

@@ -275,7 +275,7 @@ public class StatisticsTask implements ITask {
 		}
 
 		if (!metafileWriter.hasData()) {
-			FileUtil.deleteFile(metafile);
+			//FileUtil.deleteFile(metafile);
 		}
 
 		metafileWriter.close();

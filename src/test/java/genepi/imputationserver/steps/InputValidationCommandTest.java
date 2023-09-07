@@ -17,7 +17,7 @@ import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 
-public class InputValidationTest extends AbstractTestcase {
+public class InputValidationCommandTest extends AbstractTestcase {
 
 	private static final String TABIX_HOME = "files/bin/tabix";
 

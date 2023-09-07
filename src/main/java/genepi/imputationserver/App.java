@@ -1,6 +1,7 @@
 package genepi.imputationserver;
 
 import genepi.imputationserver.steps.InputValidationCommand;
+import genepi.imputationserver.steps.QualityControlCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -33,7 +34,7 @@ public class App {
 
 		CommandLine commandLine = new CommandLine(new App());
 		commandLine.addSubcommand("validate", new InputValidationCommand());
-
+		commandLine.addSubcommand("run-qc", new QualityControlCommand());
 		commandLine.setExecutionStrategy(new CommandLine.RunLast());
 		int result = commandLine.execute(args);
 		System.exit(result);

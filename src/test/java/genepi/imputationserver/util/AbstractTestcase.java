@@ -7,7 +7,7 @@ import java.util.Map;
 
 import cloudgene.sdk.internal.WorkflowStep;
 import genepi.imputationserver.steps.CompressionEncryption;
-import genepi.imputationserver.steps.FastQualityControl;
+import genepi.imputationserver.steps.QualityControlCommand;
 import genepi.imputationserver.steps.InputValidationCommand;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.io.FileUtil;
@@ -112,7 +112,7 @@ public class AbstractTestcase {
 
 	}
 
-	public class QcStatisticsMock extends FastQualityControl {
+	public class QcStatisticsMock extends QualityControlCommand {
 
 		private String folder;
 
@@ -121,16 +121,13 @@ public class AbstractTestcase {
 			this.folder = folder;
 		}
 
-		@Override
-		public String getFolder(Class clazz) {
-			// override folder with static folder instead of jar location
-			return folder;
-		}
-
-		@Override
-		protected void setupTabix(String folder) {
-			VcfFileUtil.setTabixBinary("files/bin/tabix");
-		}
+		/*
+		 * @Override public String getFolder(Class clazz) { // override folder with
+		 * static folder instead of jar location return folder; }
+		 * 
+		 * @Override protected void setupTabix(String folder) {
+		 * VcfFileUtil.setTabixBinary("files/bin/tabix"); }
+		 */
 
 	}
 
