@@ -272,14 +272,4 @@ public class PopulationPredictor {
 
 	}
 
-	public static void main(String[] args) {
-		PopulationPredictor predictor = new PopulationPredictor();
-		predictor.setSamplesFile("/Users/lukfor/Data/laser/apps/trace/references/HGDP_238_chr22.samples");
-		predictor.setReferenceFile(
-				"/Users/lukfor/Data/projects/humangen/archive/20201215_humangen_part1/output/02_imputation/reference_pc.txt");
-		predictor.setStudyFile(
-				"/Users/lukfor/Data/projects/humangen/archive/20201215_humangen_part1/output/02_imputation/study_pc.txt");
-		predictor.predictPopulation("test.txt");
-	}
-
 }

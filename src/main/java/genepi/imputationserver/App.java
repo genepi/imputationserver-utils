@@ -1,6 +1,7 @@
 package genepi.imputationserver;
 
 import genepi.imputationserver.steps.EncryptionCommand;
+import genepi.imputationserver.steps.EstimateAncestryCommand;
 import genepi.imputationserver.steps.InputValidationCommand;
 import genepi.imputationserver.steps.QualityControlCommand;
 import picocli.CommandLine;
@@ -37,6 +38,7 @@ public class App {
 		commandLine.addSubcommand("validate", new InputValidationCommand());
 		commandLine.addSubcommand("run-qc", new QualityControlCommand());
 		commandLine.addSubcommand("encrypt", new EncryptionCommand());
+		commandLine.addSubcommand("estimate-ancestry", new EstimateAncestryCommand());
 		commandLine.setExecutionStrategy(new CommandLine.RunLast());
 		int result = commandLine.execute(args);
 		System.exit(result);

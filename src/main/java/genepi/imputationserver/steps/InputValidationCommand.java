@@ -19,16 +19,11 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-
 @Command
 public class InputValidationCommand implements Callable<Integer> {
 
-	public InputValidationCommand() {
-		VcfFileUtil.setTabixBinary("tabix");
-	}
-
 	@Parameters(description = "VCF files")
-	List<String> files;
+	private List<String> files;
 
 	@Option(names = "--population", description = "Reference Population", required = true)
 	private String population;
@@ -66,6 +61,10 @@ public class InputValidationCommand implements Callable<Integer> {
 	private CloudgeneReport context = new CloudgeneReport();
 
 	private RefPanel panel = null;
+
+	public InputValidationCommand() {
+		VcfFileUtil.setTabixBinary("tabix");
+	}
 
 	public void setFiles(List<String> files) {
 		this.files = files;
