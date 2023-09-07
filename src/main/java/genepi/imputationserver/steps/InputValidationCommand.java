@@ -122,6 +122,10 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.contactEmail = contactEmail;
 	}
 
+	protected void setupTabix(String path) {
+		VcfFileUtil.setTabixBinary(path);
+	}
+
 	@Override
 	public Integer call() throws Exception {
 
@@ -154,10 +158,6 @@ public class InputValidationCommand implements Callable<Integer> {
 			return 0;
 		}
 
-	}
-
-	protected void setupTabix(String path) {
-		VcfFileUtil.setTabixBinary(path);
 	}
 
 	private boolean checkVcfFiles() throws Exception {

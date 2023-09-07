@@ -1,7 +1,5 @@
 package genepi.imputationserver.util.report;
 
-import cloudgene.sdk.internal.WorkflowContext;
-
 public class CloudgeneReportEvent {
 
 	public enum WebCommand {
@@ -21,9 +19,9 @@ public class CloudgeneReportEvent {
 		PRINTLN,
 
 		LOG,
-		
+
 		OK,
-		
+
 		WARNING
 
 	}
@@ -74,7 +72,7 @@ public class CloudgeneReportEvent {
 			}
 			case BEGIN_TASK: {
 				String name = (String) event.getParams()[0];
-				return message(name, WorkflowContext.RUNNING);
+				return message(name, CloudgeneReport.RUNNING);
 			}
 			case UPDATE_TASK: {
 				// String name = (String) event.getParams()[0];
@@ -127,13 +125,13 @@ public class CloudgeneReportEvent {
 		public static String message(String message, int type) {
 
 			switch (type) {
-			case WorkflowContext.OK:
+			case CloudgeneReport.OK:
 				return ("[OK] " + message);
-			case WorkflowContext.ERROR:
+			case CloudgeneReport.ERROR:
 				return ("[ERROR] " + message);
-			case WorkflowContext.WARNING:
+			case CloudgeneReport.WARNING:
 				return ("[WARN] " + message);
-			case WorkflowContext.RUNNING:
+			case CloudgeneReport.RUNNING:
 				return ("[RUN] " + message);
 			default:
 				return ("[INFO] " + message);

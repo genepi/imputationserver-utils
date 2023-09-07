@@ -93,10 +93,6 @@ public class QualityControlCommand implements Callable<Integer> {
 		}
 	}
 
-	protected void setupTabix(String path) {
-		VcfFileUtil.setTabixBinary(path);
-	}
-
 	public void setChainFile(String chainFile) {
 		this.chainFile = chainFile;
 	}
@@ -119,6 +115,10 @@ public class QualityControlCommand implements Callable<Integer> {
 
 	public void setMetafilesOutput(String metafilesOutput) {
 		this.metafilesOutput = metafilesOutput;
+	}
+
+	protected void setupTabix(String path) {
+		VcfFileUtil.setTabixBinary(path);
 	}
 
 	@Override
@@ -431,7 +431,7 @@ public class QualityControlCommand implements Callable<Integer> {
 				context2.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneReport.ERROR);
 			}
 			return results;
-		} catch (InterruptedException e) {
+		} catch (Exception | Error e) {
 			e.printStackTrace();
 			TaskResults result = new TaskResults();
 			result.setSuccess(false);
@@ -440,26 +440,6 @@ public class QualityControlCommand implements Callable<Integer> {
 			e.printStackTrace(new PrintWriter(s));
 			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
 			context2.endTask(e.getMessage(), CloudgeneReport.ERROR);
-			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
-			TaskResults result = new TaskResults();
-			result.setSuccess(false);
-			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(task.getName() + " failed.", CloudgeneReport.ERROR);
-			return result;
-		} catch (Error e) {
-			e.printStackTrace();
-			TaskResults result = new TaskResults();
-			result.setSuccess(false);
-			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(task.getName() + " failed.", CloudgeneReport.ERROR);
 			return result;
 		}
 

@@ -1,13 +1,13 @@
 package genepi.imputationserver.steps;
 
-import cloudgene.sdk.internal.WorkflowContext;
-import cloudgene.sdk.internal.WorkflowStep;
+import java.util.concurrent.Callable;
+
 import genepi.imputationserver.steps.ancestry.PopulationPredictor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command
-public class EstimateAncestryCommand extends WorkflowStep {
+public class EstimateAncestryCommand implements Callable<Integer> {
 
 	@Option(names = "--samples", description = "Reference Samples File", required = true)
 	private String samples;
@@ -31,9 +31,10 @@ public class EstimateAncestryCommand extends WorkflowStep {
 	private String output;
 
 	@Override
-	public boolean run(WorkflowContext context) {
+	public Integer call() throws Exception {
 
 		PopulationPredictor predictor = new PopulationPredictor();
+
 		predictor.setSamplesFile(samples);
 		predictor.setReferenceFile(reference_pc);
 		predictor.setStudyFile(study_pc);
@@ -42,7 +43,7 @@ public class EstimateAncestryCommand extends WorkflowStep {
 		predictor.setWeightThreshold(threshold);
 
 		predictor.predictPopulation(output);
-		return true;
+		return 0;
 
 	}
 
