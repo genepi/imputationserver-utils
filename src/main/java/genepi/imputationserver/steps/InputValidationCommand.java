@@ -60,8 +60,8 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Option(names = "--contactEmail", description = "Contact Mail", required = false)
 	private String contactEmail = "n/a";
 
-	@Option(names = "--output", description = "Log Output", required = false)
-	private String output = "cloudgene.log";
+	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
+	private String report = "cloudgene.report.json";
 
 	private CloudgeneLog context = new CloudgeneLog();
 
@@ -72,7 +72,7 @@ public class InputValidationCommand implements Callable<Integer> {
 	}
 
 	public void setOutput(String output) {
-		this.output = output;
+		this.report = output;
 	}
 
 	public void setPhasing(String phasing) {
@@ -126,7 +126,7 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Override
 	public Integer call() throws Exception {
 
-		context.setFilename(output);
+		context.setFilename(report);
 
 		if (panel == null) {
 			try {

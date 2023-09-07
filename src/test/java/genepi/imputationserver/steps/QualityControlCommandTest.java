@@ -25,7 +25,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 	private static final String TABIX_HOME = "files/bin/tabix";
 
-	private static final String CLOUDGENE_LOG = "cloudgene.log";
+	private static final String CLOUDGENE_LOG = "cloudgene.report.json";
 
 	private static final String TEST_DATA_TMP = "test-data/tmp";
 

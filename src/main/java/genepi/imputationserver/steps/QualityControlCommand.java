@@ -70,8 +70,8 @@ public class QualityControlCommand implements Callable<Integer> {
 	@Option(names = "--phasing-window", description = "Phasing window", required = false)
 	private int phasingWindow = 5000000;
 
-	@Option(names = "--output", description = "Log Output", required = false)
-	private String output = "cloudgene.log";
+	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
+	private String report = "cloudgene.report.json";
 
 	private CloudgeneLog context = new CloudgeneLog();
 
@@ -108,7 +108,7 @@ public class QualityControlCommand implements Callable<Integer> {
 	@Override
 	public Integer call() throws Exception {
 
-		context.setFilename(output);
+		context.setFilename(report);
 
 		if (panel == null) {
 			try {
