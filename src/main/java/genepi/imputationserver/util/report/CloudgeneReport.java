@@ -1,4 +1,4 @@
-package genepi.imputationserver.util.log;
+package genepi.imputationserver.util.report;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -14,9 +14,9 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
-import genepi.imputationserver.util.log.CloudgeneLogEvent.WebCommand;
+import genepi.imputationserver.util.report.CloudgeneReportEvent.WebCommand;
 
-public class CloudgeneLog {
+public class CloudgeneReport {
 
 	public static final int OK = 0;
 
@@ -28,18 +28,18 @@ public class CloudgeneLog {
 
 	private String filename = null;
 
-	private List<CloudgeneLogEvent> events = new Vector<CloudgeneLogEvent>();
+	private List<CloudgeneReportEvent> events = new Vector<CloudgeneReportEvent>();
 
-	public CloudgeneLog() {
+	public CloudgeneReport() {
 
 	}
 
-	public CloudgeneLog(String filename) throws JsonIOException, JsonSyntaxException, FileNotFoundException {
+	public CloudgeneReport(String filename) throws JsonIOException, JsonSyntaxException, FileNotFoundException {
 		loadFromFile(filename);
 	}
 
 	public boolean hasInMemory(String content) {
-		for (CloudgeneLogEvent event : events) {
+		for (CloudgeneReportEvent event : events) {
 			if (event.toString().contains(content)) {
 				return true;
 			}
@@ -52,7 +52,7 @@ public class CloudgeneLog {
 	}
 
 	public void loadFromFile(String filename) throws JsonIOException, JsonSyntaxException, FileNotFoundException {
-		Type collectionType = new TypeToken<List<CloudgeneLogEvent>>() {
+		Type collectionType = new TypeToken<List<CloudgeneReportEvent>>() {
 		}.getType();
 		Gson gson = (new GsonBuilder()).create();
 		events = gson.fromJson(new FileReader(filename), collectionType);
@@ -110,7 +110,7 @@ public class CloudgeneLog {
 	}
 
 	public void addEvent(WebCommand command, Object... params) {
-		CloudgeneLogEvent event = new CloudgeneLogEvent(command, params);
+		CloudgeneReportEvent event = new CloudgeneReportEvent(command, params);
 		events.add(event);
 		if (filename != null) {
 			try {

@@ -1,8 +1,8 @@
-package genepi.imputationserver.util.log;
+package genepi.imputationserver.util.report;
 
 import cloudgene.sdk.internal.WorkflowContext;
 
-public class CloudgeneLogEvent {
+public class CloudgeneReportEvent {
 
 	public enum WebCommand {
 
@@ -32,7 +32,7 @@ public class CloudgeneLogEvent {
 
 	private Object[] params;
 
-	public CloudgeneLogEvent(WebCommand command, Object[] params) {
+	public CloudgeneReportEvent(WebCommand command, Object[] params) {
 		super();
 		this.command = command;
 		this.params = params;
@@ -60,7 +60,7 @@ public class CloudgeneLogEvent {
 
 	static private class Formatter {
 
-		public static String format(CloudgeneLogEvent event) {
+		public static String format(CloudgeneReportEvent event) {
 
 			switch (event.getCommand()) {
 			case SUBMIT_COUNTER: {

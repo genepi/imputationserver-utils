@@ -11,7 +11,7 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
-import cloudgene.sdk.internal.WorkflowContext;
+import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
 import htsjdk.samtools.util.BlockCompressedStreamConstants;
@@ -34,12 +34,12 @@ public class MergedVcfFile {
 		output.close();
 	}
 
-	public void addHeader(WorkflowContext context, List<String> files) throws Exception {
+	public void addHeader(CloudgeneReport report, List<String> files) throws Exception {
 		// simple header check
 		String headerLine = null;
 		for (String file : files) {
 
-			context.println("Read header file " + file);
+			report.println("Read header file " + file);
 			LineReader reader = null;
 			try {
 				reader = new LineReader(file);
@@ -48,17 +48,17 @@ public class MergedVcfFile {
 					if (line.startsWith("#CHROM")) {
 						if (headerLine != null) {
 							if (headerLine.equals(line)) {
-								context.println("  Header is the same as header of first file.");
+								report.println("  Header is the same as header of first file.");
 							} else {
-								context.println("  ERROR: Header is different as header of first file.");
-								context.println(headerLine);
-								context.println(line);
+								report.println("  ERROR: Header is different as header of first file.");
+								report.println(headerLine);
+								report.println(line);
 								throw new Exception("Different sample order in chunks.");
 							}
 						} else {
 							headerLine = line;
 							addFile(new FileInputStream(file));
-							context.println("  Keep this header as first header.");
+							report.println("  Keep this header as first header.");
 						}
 					}
 
@@ -73,7 +73,7 @@ public class MergedVcfFile {
 				}
 				StringWriter errors = new StringWriter();
 				e.printStackTrace(new PrintWriter(errors));
-				context.println("Error reading header file: " + errors.toString());
+				report.println("Error reading header file: " + errors.toString());
 			}
 		}
 

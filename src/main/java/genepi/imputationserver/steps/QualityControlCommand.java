@@ -23,7 +23,7 @@ import genepi.imputationserver.steps.fastqc.StatisticsTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.RefPanel;
-import genepi.imputationserver.util.log.CloudgeneLog;
+import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
 import picocli.CommandLine.Command;
@@ -33,12 +33,8 @@ import picocli.CommandLine.Parameters;
 @Command
 public class QualityControlCommand implements Callable<Integer> {
 
-	public QualityControlCommand() {
-		VcfFileUtil.setTabixBinary("tabix");
-	}
-
 	@Parameters(description = "VCF files")
-	List<String> files;
+	private List<String> files;
 
 	@Option(names = "--reference", description = "Reference Panel", required = true)
 	private String reference;
@@ -73,9 +69,13 @@ public class QualityControlCommand implements Callable<Integer> {
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
 	private String report = "cloudgene.report.json";
 
-	private CloudgeneLog context = new CloudgeneLog();
+	private CloudgeneReport context = new CloudgeneReport();
 
 	private RefPanel panel = null;
+
+	public QualityControlCommand() {
+		VcfFileUtil.setTabixBinary("tabix");
+	}
 
 	public void setFiles(List<String> files) {
 		this.files = files;
@@ -103,6 +103,22 @@ public class QualityControlCommand implements Callable<Integer> {
 
 	public void setPopulation(String population) {
 		this.population = population;
+	}
+
+	public void setMafOutput(String mafOutput) {
+		this.mafOutput = mafOutput;
+	}
+
+	public void setChunksOutput(String chunksOutput) {
+		this.chunksOutput = chunksOutput;
+	}
+
+	public void setStatisticsOutput(String statisticsOutput) {
+		this.statisticsOutput = statisticsOutput;
+	}
+
+	public void setMetafilesOutput(String metafilesOutput) {
+		this.metafilesOutput = metafilesOutput;
 	}
 
 	@Override
@@ -396,7 +412,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		}
 	}
 
-	protected TaskResults runTask(final CloudgeneLog context2, ITask task) {
+	protected TaskResults runTask(final CloudgeneReport context2, ITask task) {
 		context2.beginTask("Running " + task.getName() + "...");
 		TaskResults results;
 		try {
@@ -404,15 +420,15 @@ public class QualityControlCommand implements Callable<Integer> {
 
 				@Override
 				public void progress(String message) {
-					context2.updateTask(message, CloudgeneLog.RUNNING);
+					context2.updateTask(message, CloudgeneReport.RUNNING);
 
 				}
 			});
 
 			if (results.isSuccess()) {
-				context2.endTask(task.getName(), CloudgeneLog.OK);
+				context2.endTask(task.getName(), CloudgeneReport.OK);
 			} else {
-				context2.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneLog.ERROR);
+				context2.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneReport.ERROR);
 			}
 			return results;
 		} catch (InterruptedException e) {
@@ -423,7 +439,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			StringWriter s = new StringWriter();
 			e.printStackTrace(new PrintWriter(s));
 			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(e.getMessage(), CloudgeneLog.ERROR);
+			context2.endTask(e.getMessage(), CloudgeneReport.ERROR);
 			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -433,7 +449,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			StringWriter s = new StringWriter();
 			e.printStackTrace(new PrintWriter(s));
 			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(task.getName() + " failed.", CloudgeneLog.ERROR);
+			context2.endTask(task.getName() + " failed.", CloudgeneReport.ERROR);
 			return result;
 		} catch (Error e) {
 			e.printStackTrace();
@@ -443,26 +459,10 @@ public class QualityControlCommand implements Callable<Integer> {
 			StringWriter s = new StringWriter();
 			e.printStackTrace(new PrintWriter(s));
 			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(task.getName() + " failed.", CloudgeneLog.ERROR);
+			context2.endTask(task.getName() + " failed.", CloudgeneReport.ERROR);
 			return result;
 		}
 
-	}
-
-	public void setMafOutput(String mafOutput) {
-		this.mafOutput = mafOutput;
-	}
-
-	public void setChunksOutput(String chunksOutput) {
-		this.chunksOutput = chunksOutput;
-	}
-
-	public void setStatisticsOutput(String statisticsOutput) {
-		this.statisticsOutput = statisticsOutput;
-	}
-
-	public void setMetafilesOutput(String metafilesOutput) {
-		this.metafilesOutput = metafilesOutput;
 	}
 
 }

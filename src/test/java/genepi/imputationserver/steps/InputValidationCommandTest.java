@@ -10,8 +10,8 @@ import java.util.Map;
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
-import genepi.imputationserver.util.log.CloudgeneLog;
 import genepi.imputationserver.util.RefPanelUtil;
+import genepi.imputationserver.util.report.CloudgeneReport;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -41,7 +41,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 
 		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg38 encoding."));
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
@@ -74,7 +74,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg19 encoding."));
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
 
@@ -97,7 +97,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Unable to parse header with error"));
 
 	}
@@ -155,7 +155,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
 
 	}
@@ -177,7 +177,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(
 				CloudgeneLog.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
 
@@ -199,7 +199,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog
 				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 
@@ -222,7 +222,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file is malformed"));
 		assertTrue(CloudgeneLog.hasInMemory("Error during index creation"));
 
@@ -244,7 +244,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
 
 	}
@@ -265,7 +265,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
 		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
 		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 1"));
@@ -293,7 +293,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[OK] 3 valid VCF file(s) found."));
 		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
 		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 2 3 4"));
@@ -323,7 +323,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
 
 		// test tabix index and count snps
@@ -362,7 +362,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneLog CloudgeneLog = new CloudgeneLog(CLOUDGENE_LOG);
+		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
 		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/minimac_test.50.vcf.gz";

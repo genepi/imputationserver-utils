@@ -13,7 +13,7 @@ import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.importer.ImporterFactory;
-import genepi.imputationserver.util.log.CloudgeneLog;
+import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -63,7 +63,7 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
 	private String report = "cloudgene.report.json";
 
-	private CloudgeneLog context = new CloudgeneLog();
+	private CloudgeneReport context = new CloudgeneReport();
 
 	private RefPanel panel = null;
 
@@ -71,8 +71,8 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.files = files;
 	}
 
-	public void setOutput(String output) {
-		this.report = output;
+	public void setReport(String report) {
+		this.report = report;
 	}
 
 	public void setPhasing(String phasing) {
@@ -183,11 +183,11 @@ public class InputValidationCommand implements Callable<Integer> {
 				// first files, no infos available
 				context.updateTask(
 						"Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename)) + "...",
-						CloudgeneLog.RUNNING);
+						CloudgeneReport.RUNNING);
 
 			} else {
 				context.updateTask("Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename))
-						+ "...\n\n" + infos, CloudgeneLog.RUNNING);
+						+ "...\n\n" + infos, CloudgeneReport.RUNNING);
 			}
 
 			try {
@@ -213,7 +213,7 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask(
 								"Please double check, if all uploaded VCF files include the same amount of samples ("
 										+ vcfFile.getNoSamples() + " vs " + noSamples + ")",
-								CloudgeneLog.ERROR);
+								CloudgeneReport.ERROR);
 						return false;
 					}
 
@@ -227,7 +227,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 						context.endTask(
 								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
-								CloudgeneLog.ERROR);
+								CloudgeneReport.ERROR);
 						return false;
 					}
 
@@ -235,21 +235,21 @@ public class InputValidationCommand implements Callable<Integer> {
 
 						context.endTask("The maximum number of samples is " + maxSamples + ". Please contact "
 								+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
-								+ "</a>) to discuss this large imputation.", CloudgeneLog.ERROR);
+								+ "</a>) to discuss this large imputation.", CloudgeneReport.ERROR);
 						return false;
 					}
 
 					if (build.equals("hg19") && vcfFile.hasChrPrefix()) {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
-								+ vcfFile.getChromosome() + "'.", CloudgeneLog.ERROR);
+								+ vcfFile.getChromosome() + "'.", CloudgeneReport.ERROR);
 						return false;
 					}
 
 					if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
 						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 								+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
-								+ vcfFile.getChromosome() + "'.", CloudgeneLog.ERROR);
+								+ vcfFile.getChromosome() + "'.", CloudgeneReport.ERROR);
 						return false;
 					}
 
@@ -264,13 +264,13 @@ public class InputValidationCommand implements Callable<Integer> {
 					}
 
 				} else {
-					context.endTask("No valid chromosomes found!", CloudgeneLog.ERROR);
+					context.endTask("No valid chromosomes found!", CloudgeneReport.ERROR);
 					return false;
 				}
 
 			} catch (IOException e) {
 				context.endTask(StringEscapeUtils.escapeHtml(e.getMessage())
-						+ " (see <a href=\"/start.html#!pages/help\">Help</a>).", CloudgeneLog.ERROR);
+						+ " (see <a href=\"/start.html#!pages/help\">Help</a>).", CloudgeneReport.ERROR);
 				return false;
 
 			}
@@ -279,7 +279,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 		if (validVcfFiles.size() > 0) {
 
-			context.endTask(validVcfFiles.size() + " valid VCF file(s) found.\n\n" + infos, CloudgeneLog.OK);
+			context.endTask(validVcfFiles.size() + " valid VCF file(s) found.\n\n" + infos, CloudgeneReport.OK);
 
 			if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
 				context.error("Your input data is unphased. Please select an algorithm for phasing.");
@@ -298,7 +298,7 @@ public class InputValidationCommand implements Callable<Integer> {
 		} else {
 
 			context.endTask("The provided files are not VCF files  (see <a href=\"/start.html#!pages/help\">Help</a>).",
-					CloudgeneLog.ERROR);
+					CloudgeneReport.ERROR);
 			return false;
 		}
 	}

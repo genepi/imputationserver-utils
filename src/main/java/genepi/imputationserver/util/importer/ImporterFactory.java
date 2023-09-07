@@ -1,8 +1,5 @@
 package genepi.imputationserver.util.importer;
 
-import java.util.List;
-import java.util.Vector;
-
 public class ImporterFactory {
 
 	public static boolean needsImport(String url) {
