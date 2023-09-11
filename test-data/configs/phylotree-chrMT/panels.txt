@@ -2,7 +2,7 @@
   - id: phylotree
     reference_build: hg19
     hdfs: ${app_local_folder}/ref-panels/chr$chr.phylotree17.m3vcf.gz
-    legend: ref-panels/chrMT.phylotree17.legend.gz
+    legend: ${app_local_folder}/ref-panels/chrMT.phylotree17.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_withX.txt.gz
     samples:
       eur: 2533

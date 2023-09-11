@@ -6,13 +6,15 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
-import cloudgene.sdk.internal.WorkflowContext;
-import cloudgene.sdk.internal.WorkflowStep;
-import genepi.imputationserver.Main;
+import org.apache.commons.lang.StringEscapeUtils;
+
 import genepi.imputationserver.steps.fastqc.ITask;
 import genepi.imputationserver.steps.fastqc.ITaskProgressListener;
 import genepi.imputationserver.steps.fastqc.LiftOverTask;
@@ -20,70 +22,137 @@ import genepi.imputationserver.steps.fastqc.RangeEntry;
 import genepi.imputationserver.steps.fastqc.StatisticsTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
-import genepi.imputationserver.util.DefaultPreferenceStore;
 import genepi.imputationserver.util.RefPanel;
+import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
-public class FastQualityControl extends WorkflowStep {
+@Command
+public class QualityControlCommand implements Callable<Integer> {
 
-	protected void setupTabix(String folder) {
-		VcfFileUtil.setTabixBinary(FileUtil.path(folder, "bin", "tabix"));
+	@Parameters(description = "VCF files")
+	private List<String> files;
+
+	@Option(names = "--reference", description = "Reference Panel", required = true)
+	private String reference;
+
+	@Option(names = "--population", description = "Reference Population", required = true)
+	private String population;
+
+	@Option(names = "--maf-output", description = "MAF file", required = true)
+	private String mafOutput = "";
+
+	@Option(names = "--chunks-out", description = "VCF Chunks Folder", required = true)
+	private String chunksOutput = "";
+
+	@Option(names = "--statistics-out", description = "Statistics Folder", required = true)
+	private String statisticsOutput = "";
+
+	@Option(names = "--metafiles-out", description = "Metafiles Folder", required = true)
+	private String metafilesOutput = "";
+
+	@Option(names = "--build", description = "Build", required = false)
+	private String build = "hg19";
+
+	@Option(names = "--chain", description = "chainFile", required = false)
+	private String chainFile = "";
+
+	@Option(names = "--chunksize", description = "VCF chunksize", required = false)
+	private int chunksize = 20000000;
+
+	@Option(names = "--phasing-window", description = "Phasing window", required = false)
+	private int phasingWindow = 5000000;
+
+	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
+	private String report = "cloudgene.report.json";
+
+	private CloudgeneReport context = new CloudgeneReport();
+
+	private RefPanel panel = null;
+
+	public QualityControlCommand() {
+		VcfFileUtil.setTabixBinary("tabix");
 	}
 
-	@Override
-	public boolean run(WorkflowContext context) {
+	public void setFiles(List<String> files) {
+		this.files = files;
+	}
 
-		context.log(Main.APP + " " + Main.VERSION);
-		
-		String folder = getFolder(FastQualityControl.class);
-		setupTabix(folder);
-		String inputFiles = context.get("files");
-		Object reference = context.getData("refpanel");
-		String population = context.get("population");
+	public void setReference(Map<String, Object> reference) {
 
-		String mafFile = context.get("mafFile");
-		String chunkFileDir = context.get("chunkFileDir");
-		String statDir = context.get("statisticDir");
-		String chunksDir = context.get("chunksDir");
-		String buildGwas = context.get("build");
-
-		// set default build
-		if (buildGwas == null) {
-			buildGwas = "hg19";
-		}
-
-		// load job.config
-		File jobConfig = new File(FileUtil.path(folder, "job.config"));
-		DefaultPreferenceStore store = new DefaultPreferenceStore();
-		if (jobConfig.exists()) {
-			store.load(jobConfig);
-		} else {
-			context.log("Configuration file '" + jobConfig.getAbsolutePath() + "' not available. Use default values.");
-		}
-		int phasingWindow = Integer.parseInt(store.getString("phasing.window"));
-		int chunkSize = Integer.parseInt(store.getString("chunksize"));
-
-		// check reference panel
-		RefPanel panel = null;
 		try {
 			panel = RefPanel.loadFromProperties(reference);
 			if (panel == null) {
 				context.error("Reference not found.");
-				return false;
 			}
 		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + e.getMessage());
-			return false;
+			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+		}
+	}
+
+	public void setChainFile(String chainFile) {
+		this.chainFile = chainFile;
+	}
+
+	public void setPopulation(String population) {
+		this.population = population;
+	}
+
+	public void setMafOutput(String mafOutput) {
+		this.mafOutput = mafOutput;
+	}
+
+	public void setChunksOutput(String chunksOutput) {
+		this.chunksOutput = chunksOutput;
+	}
+
+	public void setStatisticsOutput(String statisticsOutput) {
+		this.statisticsOutput = statisticsOutput;
+	}
+
+	public void setMetafilesOutput(String metafilesOutput) {
+		this.metafilesOutput = metafilesOutput;
+	}
+
+	protected void setupTabix(String path) {
+		VcfFileUtil.setTabixBinary(path);
+	}
+
+	@Override
+	public Integer call() throws Exception {
+
+		context.setFilename(report);
+
+		if (panel == null) {
+			try {
+				panel = RefPanel.loadFromJson(reference);
+				if (panel == null) {
+					context.error("Reference not found.");
+					return -1;
+				}
+			} catch (Exception e) {
+				context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+				return -1;
+			}
 		}
 
-		String[] vcfFilenames = FileUtil.getFiles(inputFiles, "*.vcf.gz$|*.vcf$");
+		if (!analyzeFiles()) {
+			return -1;
+		} else {
+			return 0;
+		}
 
-		Arrays.sort(vcfFilenames);
+	}
+
+	private boolean analyzeFiles() {
+		Collections.sort(files);
 
 		LineWriter excludedSnpsWriter = null;
 
-		String excludedSnpsFile = FileUtil.path(statDir, "snps-excluded.txt");
+		String excludedSnpsFile = FileUtil.path(statisticsOutput, "snps-excluded.txt");
 
 		try {
 			excludedSnpsWriter = new LineWriter(excludedSnpsFile);
@@ -93,16 +162,17 @@ public class FastQualityControl extends WorkflowStep {
 			return false;
 		}
 
+		String[] vcfFilenames = files.toArray(new String[files.size()]);
 		// check if liftover is needed
-		if (!buildGwas.equals(panel.getBuild())) {
-			context.warning("Uploaded data is " + buildGwas + " and reference is " + panel.getBuild() + ".");
-			String chainFile = store.getString(buildGwas + "To" + panel.getBuild());
+		if (!build.equals(panel.getBuild())) {
+			context.warning("Uploaded data is " + build + " and reference is " + panel.getBuild() + ".");
+
 			if (chainFile == null) {
-				context.error("Currently we do not support liftOver from " + buildGwas + " to " + panel.getBuild());
+				context.error("Currently we do not support liftOver from " + build + " to " + panel.getBuild());
 				return false;
 			}
 
-			String fullPathChainFile = FileUtil.path(folder, chainFile);
+			String fullPathChainFile = FileUtil.path(chainFile);
 			if (!new File(fullPathChainFile).exists()) {
 				context.error("Chain file " + fullPathChainFile + " not found.");
 				return false;
@@ -111,7 +181,7 @@ public class FastQualityControl extends WorkflowStep {
 			LiftOverTask task = new LiftOverTask();
 			task.setVcfFilenames(vcfFilenames);
 			task.setChainFile(fullPathChainFile);
-			task.setChunksDir(chunksDir);
+			task.setChunksDir(chunksOutput);
 			task.setExcludedSnpsWriter(excludedSnpsWriter);
 
 			TaskResults results = runTask(context, task);
@@ -128,20 +198,20 @@ public class FastQualityControl extends WorkflowStep {
 		StatisticsTask task = new StatisticsTask();
 		task.setVcfFilenames(vcfFilenames);
 		task.setExcludedSnpsWriter(excludedSnpsWriter);
-		task.setChunkSize(chunkSize);
+		task.setChunkSize(chunksize);
 		task.setPhasingWindow(phasingWindow);
 		task.setPopulation(population);
 		// support relative path
 		String legend = panel.getLegend();
 		if (!legend.startsWith("/") && !legend.startsWith("./")) {
-			legend = FileUtil.path(folder, legend);
+			legend = FileUtil.path(legend);
 		}
 
 		// check chromosomes
-
 		if (!panel.supportsPopulation(population)) {
 			StringBuilder report = new StringBuilder();
-			report.append("Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.\n");
+			report.append(
+					"Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.\n");
 			if (panel.getPopulations() != null) {
 				report.append("Available populations:");
 				for (String pop : panel.getPopulations().values()) {
@@ -160,10 +230,10 @@ public class FastQualityControl extends WorkflowStep {
 
 		task.setLegendFile(legend);
 		task.setRefSamples(refSamples);
-		task.setMafFile(mafFile);
-		task.setChunkFileDir(chunkFileDir);
-		task.setChunksDir(chunksDir);
-		task.setStatDir(statDir);
+		task.setMafFile(mafOutput);
+		task.setChunkFileDir(metafilesOutput);
+		task.setChunksDir(chunksOutput);
+		task.setStatDir(statisticsOutput);
 		task.setBuild(panel.getBuild());
 
 		double referenceOverlap = panel.getQcFilterByKey("overlap");
@@ -214,7 +284,6 @@ public class FastQualityControl extends WorkflowStep {
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -259,21 +328,19 @@ public class FastQualityControl extends WorkflowStep {
 		text.append("Remaining sites in total: " + formatter.format(task.getOverallSnps()) + "\n");
 
 		if (task.getFiltered() > 0) {
-			text.append(
-					"See " + context.createLinkToFile("statisticDir", "snps-excluded.txt") + " for details" + "\n");
+			text.append("See snps-excluded.txt for details" + "\n");
 		}
 
 		if (task.getNotFoundInLegend() > 0) {
 			text.append("Typed only sites: " + formatter.format(task.getNotFoundInLegend()) + "\n");
-			text.append("See " + context.createLinkToFile("statisticDir", "typed-only.txt") + " for details" + "\n");
+			text.append("See typed-only.txt for details" + "\n");
 		}
 
 		if (task.getRemovedChunksSnps() > 0) {
 
 			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksSnps())
 
-					+ " Chunk(s) excluded: < " + minSnps + " SNPs (see "
-					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + "  for details).");
+					+ " Chunk(s) excluded: < " + minSnps + " SNPs (see chunks-excluded.txt for details).");
 		}
 
 		if (task.getRemovedChunksCallRate() > 0) {
@@ -281,7 +348,7 @@ public class FastQualityControl extends WorkflowStep {
 			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksCallRate())
 
 					+ " Chunk(s) excluded: at least one sample has a call rate < " + (sampleCallrate * 100) + "% (see "
-					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + " for details).");
+					+ "chunks-excluded.txt for details).");
 		}
 
 		if (task.getRemovedChunksOverlap() > 0) {
@@ -289,7 +356,7 @@ public class FastQualityControl extends WorkflowStep {
 			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksOverlap())
 
 					+ " Chunk(s) excluded: reference overlap < " + (referenceOverlap * 100) + "% (see "
-					+ context.createLinkToFile("statisticDir", "chunks-excluded.txt") + " for details).");
+					+ " chunks-excluded.txt for details).");
 		}
 
 		long excludedChunks = task.getRemovedChunksSnps() + task.getRemovedChunksCallRate()
@@ -330,7 +397,7 @@ public class FastQualityControl extends WorkflowStep {
 		else if (task.isChrXPloidyError()) {
 			text.append(
 					"\n<b>Error:</b> ChrX nonPAR region includes ambiguous samples (haploid and diploid positions). Imputation cannot be started! See "
-							+ context.createLinkToFile("statisticDir", "chrX-info.txt"));
+							+ "chrX-info.txt");
 			context.error(text.toString());
 
 			return false;
@@ -343,57 +410,36 @@ public class FastQualityControl extends WorkflowStep {
 			return true;
 
 		}
-
 	}
 
-	protected TaskResults runTask(final WorkflowContext context, ITask task) {
-		context.beginTask("Running " + task.getName() + "...");
+	protected TaskResults runTask(final CloudgeneReport context2, ITask task) {
+		context2.beginTask("Running " + task.getName() + "...");
 		TaskResults results;
 		try {
 			results = task.run(new ITaskProgressListener() {
 
 				@Override
 				public void progress(String message) {
-					context.updateTask(message, WorkflowContext.RUNNING);
+					context2.updateTask(message, CloudgeneReport.RUNNING);
 
 				}
 			});
 
 			if (results.isSuccess()) {
-				context.endTask(task.getName(), WorkflowContext.OK);
+				context2.endTask(task.getName(), CloudgeneReport.OK);
 			} else {
-				context.endTask(task.getName() + "\n" + results.getMessage(), WorkflowContext.ERROR);
+				context2.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneReport.ERROR);
 			}
 			return results;
-		} catch (InterruptedException e) {
+		} catch (Exception | Error e) {
 			e.printStackTrace();
 			TaskResults result = new TaskResults();
 			result.setSuccess(false);
 			result.setMessage(e.getMessage());
 			StringWriter s = new StringWriter();
 			e.printStackTrace(new PrintWriter(s));
-			context.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context.endTask(e.getMessage(), WorkflowContext.ERROR);
-			return result;
-		} catch (Exception e) {
-			e.printStackTrace();
-			TaskResults result = new TaskResults();
-			result.setSuccess(false);
-			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			context.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context.endTask(task.getName() + " failed.", WorkflowContext.ERROR);
-			return result;
-		} catch (Error e) {
-			e.printStackTrace();
-			TaskResults result = new TaskResults();
-			result.setSuccess(false);
-			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			context.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context.endTask(task.getName() + " failed.", WorkflowContext.ERROR);
+			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
+			context2.endTask(e.getMessage(), CloudgeneReport.ERROR);
 			return result;
 		}
 

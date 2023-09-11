@@ -1,12 +1,18 @@
 package genepi.imputationserver.util;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
 public class RefPanel {
 
-	public static final String STRAMD_FLIPS = "100";
+	public static final String STRAND_FLIPS = "100";
 	public static final String SAMPLE_CALL_RATE = "0.5";
 	public static final String MIN_SNPS = "3";
 	public static final String OVERLAP = "0.5";
@@ -49,7 +55,7 @@ public class RefPanel {
 		defaultQcFilter.put("minSnps", MIN_SNPS);
 		defaultQcFilter.put("sampleCallrate", SAMPLE_CALL_RATE);
 		defaultQcFilter.put("mixedGenotypeschrX", CHR_X_MIXED_GENOTYPES);
-		defaultQcFilter.put("strandFlips", STRAMD_FLIPS);
+		defaultQcFilter.put("strandFlips", STRAND_FLIPS);
 	}
 
 	public String getId() {
@@ -273,6 +279,14 @@ public class RefPanel {
 
 			return null;
 		}
+	}
+
+	public static RefPanel loadFromJson(String filename) throws JsonSyntaxException, JsonIOException, IOException {
+		Gson gson = (new GsonBuilder()).create();
+		Map<String, Object> refPanelMap = gson.fromJson(new FileReader(filename), Map.class);
+
+		return loadFromProperties(refPanelMap);
+
 	}
 
 }
