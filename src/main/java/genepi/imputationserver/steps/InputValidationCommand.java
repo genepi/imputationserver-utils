@@ -46,6 +46,9 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Option(names = "--chunksize", description = "Chunksize", required = false)
 	private int chunksize = 20000000;
 
+	@Option(names = "--minSamples", description = "Min Samples", required = false)
+	private int minSamples = 20;
+
 	@Option(names = "--maxSamples", description = "Max Samples", required = false)
 	private int maxSamples = 50000;
 
@@ -205,6 +208,11 @@ public class InputValidationCommand implements Callable<Integer> {
 					String chromosomeString = "";
 					for (String chr : chromosomes) {
 						chromosomeString += " " + chr;
+					}
+
+					if (noSamples < minSamples && minSamples != 0) {
+						context.endTask("At least " + minSamples + " samples must be uploaded.", CloudgeneReport.ERROR);
+						return false;
 					}
 
 					// check if all files have same amount of samples
