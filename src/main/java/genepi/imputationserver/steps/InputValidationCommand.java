@@ -3,7 +3,6 @@ package genepi.imputationserver.steps;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 
@@ -85,16 +84,8 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.population = population;
 	}
 
-	public void setReference(Map<String, Object> reference) {
-
-		try {
-			panel = RefPanel.loadFromProperties(reference);
-			if (panel == null) {
-				context.error("Reference not found.");
-			}
-		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
-		}
+	public void setRefPanel(RefPanel panel) {
+		this.panel = panel;
 	}
 
 	public void setBuild(String build) {
@@ -115,6 +106,10 @@ public class InputValidationCommand implements Callable<Integer> {
 
 	public void setMaxSamples(int maxSamples) {
 		this.maxSamples = maxSamples;
+	}
+
+	public void setMinSamples(int minSamples) {
+		this.minSamples = minSamples;
 	}
 
 	public void setContactName(String contactName) {
@@ -210,11 +205,6 @@ public class InputValidationCommand implements Callable<Integer> {
 						chromosomeString += " " + chr;
 					}
 
-					if (noSamples < minSamples && minSamples != 0) {
-						context.endTask("At least " + minSamples + " samples must be uploaded.", CloudgeneReport.ERROR);
-						return false;
-					}
-
 					// check if all files have same amount of samples
 					if (noSamples != 0 && noSamples != vcfFile.getNoSamples()) {
 						context.endTask(
@@ -235,6 +225,11 @@ public class InputValidationCommand implements Callable<Integer> {
 						context.endTask(
 								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
 								CloudgeneReport.ERROR);
+						return false;
+					}
+
+					if (noSamples < minSamples && minSamples != 0) {
+						context.endTask("At least " + minSamples + " samples must be uploaded.", CloudgeneReport.ERROR);
 						return false;
 					}
 

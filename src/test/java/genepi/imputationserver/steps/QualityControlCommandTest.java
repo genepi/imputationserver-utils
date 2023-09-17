@@ -5,12 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Map;
 
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
-import genepi.imputationserver.util.RefPanelUtil;
+import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
@@ -29,104 +28,79 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 	private static final String TEST_DATA_TMP = "test-data/tmp";
 
-	private QualityControlCommand buildCommand(String inputFolder) {
-
-		File tmp = new File(TEST_DATA_TMP);
-		if (tmp.exists()) {
-			FileUtil.deleteDirectory(tmp);
-		}
-		tmp.mkdirs();
-
-		QualityControlCommand command = new QualityControlCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setupTabix(TABIX_HOME);
-		command.setMafOutput(FileUtil.path(TEST_DATA_TMP, "maf.txt"));
-		command.setMetafilesOutput(TEST_DATA_TMP);
-		command.setChunksOutput(TEST_DATA_TMP);
-		command.setStatisticsOutput(TEST_DATA_TMP);
-		return command;
-	}
-
 	@Test
 	public void testQcStatistics() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("Alternative allele frequency > 0.5 sites: 185"));
-		assertTrue(context.hasInMemory("Excluded sites in total: 336"));
-		assertTrue(context.hasInMemory("Remaining sites in total: 96"));
-		assertTrue(context.hasInMemory("Monomorphic sites: 331"));
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 185"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 336"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 96"));
+		assertTrue(log.hasInMemory("Monomorphic sites: 331"));
 
 	}
 
 	@Test
 	public void testQcStatisticAllChunksExcluded() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 		// check statistics
-		assertTrue(context.hasInMemory("No chunks passed the QC step"));
+		assertTrue(log.hasInMemory("No chunks passed the QC step"));
 
 	}
 
 	@Test
 	public void testQcStatisticsAllChunksFailed() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-qc";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Alternative allele frequency > 0.5 sites: 37,503"));
-		assertTrue(context.hasInMemory("Duplicated sites: 618"));
-		assertTrue(context.hasInMemory("36 Chunk(s) excluded"));
-		assertTrue(context.hasInMemory("No chunks passed the QC step"));
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 37,503"));
+		assertTrue(log.hasInMemory("Duplicated sites: 618"));
+		assertTrue(log.hasInMemory("36 Chunk(s) excluded"));
+		assertTrue(log.hasInMemory("No chunks passed the QC step"));
 
 	}
 
 	@Test
 	public void testCountLinesInFailedChunkFile() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-qc";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(-1, (int) command.call());
 
@@ -152,36 +126,33 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsAllChunksPassed() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(context.hasInMemory("Remaining sites in total: 117,498"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
 
 	}
 
 	@Test
 	public void testCountSitesForOneChunkedContig() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(0, (int) command.call());
 
@@ -212,15 +183,13 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountAmountSplitsForSeveralContigs() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(0, (int) command.call());
 
@@ -244,15 +213,13 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountLinesInChunkMetaFile() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
 		LineReader reader = new LineReader(FileUtil.path(TEST_DATA_TMP, "1"));
@@ -269,15 +236,13 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountSamplesInCreatedChunk() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
 		for (File file : new File(TEST_DATA_TMP).listFiles()) {
@@ -298,44 +263,40 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testMonomorphicSnps() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr20";
+		String panels = "test-data/configs/hapmap-chr20/panels.txt";
 		String inputFolder1 = "test-data/data/chr20-phased-1sample";
 		String inputFolder50 = "test-data/data/chr20-phased";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder1);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("Monomorphic sites: 0"));
+		assertTrue(log.hasInMemory("Monomorphic sites: 0"));
 
 		command.setFiles(getFiles(inputFolder50));
 
 		assertEquals(0, (int) command.call());
 
-		context = new CloudgeneReport(CLOUDGENE_LOG);
+		log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("Monomorphic sites: 11"));
+		assertTrue(log.hasInMemory("Monomorphic sites: 11"));
 
 	}
 
 	@Test
 	public void testChrXSplits() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX";
+		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(0, (int) command.call());
 
@@ -353,147 +314,132 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testChrXInvalidAlleles() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX";
+		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-phased-invalid";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("Invalid alleles: 190"));
+		assertTrue(log.hasInMemory("Invalid alleles: 190"));
 
 	}
 
 	@Test
 	public void testChrXMixedGenotypes() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX";
+		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-mixed";
 		File tmp = new File(TEST_DATA_TMP);
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(context.hasInMemory("Chromosome X nonPAR region includes > 10 % mixed genotypes."));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("Chromosome X nonPAR region includes > 10 % mixed genotypes."));
 
 	}
 
 	@Test
 	public void testChrXPloidyError() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX";
+		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-ploidy";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("ChrX nonPAR region includes ambiguous samples"));
+		assertTrue(log.hasInMemory("ChrX nonPAR region includes ambiguous samples"));
 
 	}
 
 	@Test
 	public void testAlleleFrequencyCheckWithWrongPopulation() throws Exception {
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		command.setPopulation("afr");
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Population 'afr' is not supported by reference panel 'hapmap2'."));
+		assertTrue(log.hasInMemory("Population 'afr' is not supported by reference panel 'hapmap2'."));
 	}
 
 	@Test
 	public void testAlleleFrequencyCheckWithNoSamplesForPopulation() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("[WARN] Skip allele frequency check."));
+		assertTrue(log.hasInMemory("[WARN] Skip allele frequency check."));
 	}
 
 	@Test
 	public void testQcStatisticsAllowStrandFlips() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(context.hasInMemory("Remaining sites in total: 117,498"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
 
 	}
 
 	@Test
 	public void testQcStatisticsDontAllowStrandFlips() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",
-				"hapmap2-qcfilter-strandflips");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-strandflips");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(context.hasInMemory("Remaining sites in total: 117,498"));
-		assertTrue(context.hasInMemory(
+		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
+		assertTrue(log.hasInMemory(
 				"<b>Error:</b> More than -1 obvious strand flips have been detected. Please check strand. Imputation cannot be started!"));
 
 	}
@@ -501,73 +447,64 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsFilterOverlap() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",
-				"hapmap2-qcfilter-ref-overlap");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-ref-overlap");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("<b>Warning:</b> 36 Chunk(s) excluded: reference overlap < 99.0%"));
+		assertTrue(log.hasInMemory("<b>Warning:</b> 36 Chunk(s) excluded: reference overlap < 99.0%"));
 
 	}
 
 	@Test
 	public void testQcStatisticsFilterMinSnps() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",
-				"hapmap2-qcfilter-min-snps");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-min-snps");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 		// check statistics
-		assertTrue(context.hasInMemory("<b>Warning:</b> 2 Chunk(s) excluded: < 1000 SNPs"));
+		assertTrue(log.hasInMemory("<b>Warning:</b> 2 Chunk(s) excluded: < 1000 SNPs"));
 
 	}
 
 	@Test
 	public void testQcStatisticsFilterSampleCallrate() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-3chr";
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt",
-				"hapmap2-qcfilter-low-callrate");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-low-callrate");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context
-				.hasInMemory("<b>Warning:</b> 36 Chunk(s) excluded: at least one sample has a call rate < 101.0%"));
+		assertTrue(
+				log.hasInMemory("<b>Warning:</b> 36 Chunk(s) excluded: at least one sample has a call rate < 101.0%"));
 
 	}
 
 	@Test
 	public void testChr23PipelineLifting() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX-hg38";
+		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chr23-unphased";
 
 		// maybe git large files?
@@ -578,25 +515,23 @@ public class QualityControlCommandTest extends AbstractTestcase {
 			return;
 		}
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(context.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
-		assertTrue(context.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
+		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
 
 	}
 
 	@Test
 	public void testChrXPipelineLifting() throws Exception, ZipException {
 
-		String configFolder = "test-data/configs/hapmap-chrX-hg38";
+		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";
 
 		// maybe git large files?
@@ -607,59 +542,72 @@ public class QualityControlCommandTest extends AbstractTestcase {
 			return;
 		}
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase1");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(context.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
-		assertTrue(context.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
+		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
 
 	}
 
 	@Test
 	public void testRegionImputationSimple() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2-region-simple");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-region-simple");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(context.hasInMemory("Remaining sites in total: 1"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 1"));
 
 	}
 
 	@Test
 	public void testRegionImputationComplex() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2-region-complex");
-
-		resolveEnvVariable(panel, configFolder);
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-region-complex");
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference(panel);
+		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport context = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 		// check statistics
-		assertTrue(context.hasInMemory("Remaining sites in total: 2"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 2"));
 
+	}
+
+	private QualityControlCommand buildCommand(String inputFolder) {
+
+		File tmp = new File(TEST_DATA_TMP);
+		if (tmp.exists()) {
+			FileUtil.deleteDirectory(tmp);
+		}
+		tmp.mkdirs();
+
+		QualityControlCommand command = new QualityControlCommand();
+		command.setFiles(getFiles(inputFolder));
+		command.setupTabix(TABIX_HOME);
+		command.setMafOutput(FileUtil.path(TEST_DATA_TMP, "maf.txt"));
+		command.setMetafilesOutput(TEST_DATA_TMP);
+		command.setChunksOutput(TEST_DATA_TMP);
+		command.setStatisticsOutput(TEST_DATA_TMP);
+		command.setReport(CLOUDGENE_LOG);
+		return command;
 	}
 
 }

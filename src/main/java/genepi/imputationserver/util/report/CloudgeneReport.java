@@ -121,5 +121,11 @@ public class CloudgeneReport {
 
 		}
 	}
+	
+	public void view() {
+		for (CloudgeneReportEvent event : events) {
+			System.out.println(event.toString());
+		}
+	}
 
 }

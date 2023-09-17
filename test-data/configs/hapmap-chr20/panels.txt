@@ -1,7 +1,7 @@
 
   - id: hapmap2
     reference_build: hg19
-    hdfs: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
+    genotypes: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_withX.txt.gz
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf

@@ -1,10 +1,13 @@
 package genepi.imputationserver.util;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -20,7 +23,7 @@ public class RefPanel {
 
 	private String id;
 
-	private String hdfs;
+	private String genotypes;
 
 	private String legend;
 
@@ -66,12 +69,12 @@ public class RefPanel {
 		this.id = id;
 	}
 
-	public String getHdfs() {
-		return hdfs;
+	public String getGenotypes() {
+		return genotypes;
 	}
 
-	public void setHdfs(String hdfs) {
-		this.hdfs = hdfs;
+	public void setGenotypes(String genotypes) {
+		this.genotypes = genotypes;
 	}
 
 	public String getLegend() {
@@ -202,91 +205,120 @@ public class RefPanel {
 
 	public static RefPanel loadFromProperties(Object properties) throws IOException {
 
-		if (properties != null) {
-			RefPanel panel = new RefPanel();
-			Map<String, Object> map = (Map<String, Object>) properties;
+		if (properties == null) {
+			throw new IOException("Propertie map not set.");
+		}
 
-			if (map.get("hdfs") != null) {
-				panel.setHdfs(map.get("hdfs").toString());
-			} else {
-				throw new IOException("Property 'hdfs' not found in cloudgene.yaml.");
-			}
+		RefPanel panel = new RefPanel();
+		Map<String, Object> map = (Map<String, Object>) properties;
 
-			if (map.get("id") != null) {
-				panel.setId(map.get("id").toString());
-			} else {
-				throw new IOException("Property 'id' not found in cloudgene.yaml.");
-			}
-
-			if (map.get("legend") != null) {
-				panel.setLegend(map.get("legend").toString());
-			} else {
-				throw new IOException("Property 'legend' not found in cloudgene.yaml.");
-			}
-
-			if (map.get("mapEagle") != null) {
-				panel.setMapEagle(map.get("mapEagle").toString());
-			}
-
-			if (map.get("refEagle") != null) {
-				panel.setRefEagle(map.get("refEagle").toString());
-			}
-
-			if (map.get("mapBeagle") != null) {
-				panel.setMapBeagle(map.get("mapBeagle").toString());
-			}
-
-			if (map.get("refBeagle") != null) {
-				panel.setRefBeagle(map.get("refBeagle").toString());
-			}
-
-			if (map.get("populations") != null) {
-				panel.setPopulations((Map<String, String>) map.get("populations"));
-			} else {
-				throw new IOException("Property 'populations' not found in cloudgene.yaml.");
-			}
-
-			if (map.get("samples") != null) {
-				panel.setSamples((Map<String, String>) map.get("samples"));
-				;
-			} else {
-				throw new IOException("Property 'samples' not found in cloudgene.yaml.");
-			}
-
-			if (map.get("qcFilter") != null) {
-				panel.setQcFilter((Map<String, String>) map.get("qcFilter"));
-			}
-
-			// optional parameters
-			if (map.get("reference_build") != null) {
-				panel.setBuild(map.get("reference_build").toString());
-			}
-
-			if (map.get("range") != null) {
-				panel.setRange(map.get("range").toString());
-			} else {
-				panel.setRange(null);
-			}
-
-			if (map.get("mapMinimac") != null) {
-				panel.setMapMinimac(map.get("mapMinimac").toString());
-			} else {
-				panel.setMapMinimac(null);
-			}
-
-			return panel;
+		if (map.get("genotypes") != null) {
+			panel.setGenotypes(map.get("genotypes").toString());
 		} else {
+			throw new IOException("Property 'genotypes' not found in cloudgene.yaml.");
+		}
 
-			return null;
+		if (map.get("id") != null) {
+			panel.setId(map.get("id").toString());
+		} else {
+			throw new IOException("Property 'id' not found in cloudgene.yaml.");
+		}
+
+		if (map.get("legend") != null) {
+			panel.setLegend(map.get("legend").toString());
+		} else {
+			throw new IOException("Property 'legend' not found in cloudgene.yaml.");
+		}
+
+		if (map.get("mapEagle") != null) {
+			panel.setMapEagle(map.get("mapEagle").toString());
+		}
+
+		if (map.get("refEagle") != null) {
+			panel.setRefEagle(map.get("refEagle").toString());
+		}
+
+		if (map.get("mapBeagle") != null) {
+			panel.setMapBeagle(map.get("mapBeagle").toString());
+		}
+
+		if (map.get("refBeagle") != null) {
+			panel.setRefBeagle(map.get("refBeagle").toString());
+		}
+
+		if (map.get("populations") != null) {
+			panel.setPopulations((Map<String, String>) map.get("populations"));
+		} else {
+			throw new IOException("Property 'populations' not found in cloudgene.yaml.");
+		}
+
+		if (map.get("samples") != null) {
+			panel.setSamples((Map<String, String>) map.get("samples"));
+			;
+		} else {
+			throw new IOException("Property 'samples' not found in cloudgene.yaml.");
+		}
+
+		if (map.get("qcFilter") != null) {
+			panel.setQcFilter((Map<String, String>) map.get("qcFilter"));
+		}
+
+		// optional parameters
+		if (map.get("reference_build") != null) {
+			panel.setBuild(map.get("reference_build").toString());
+		}
+
+		if (map.get("range") != null) {
+			panel.setRange(map.get("range").toString());
+		} else {
+			panel.setRange(null);
+		}
+
+		if (map.get("mapMinimac") != null) {
+			panel.setMapMinimac(map.get("mapMinimac").toString());
+		} else {
+			panel.setMapMinimac(null);
+		}
+
+		return panel;
+
+	}
+
+	public static void resolveEnvVariable(Map<String, Object> properties, String folder) {
+		for (String key : properties.keySet()) {
+			Object value = properties.get(key);
+			if (value instanceof String) {
+				String valueString = value.toString().replaceAll("\\$\\{app_local_folder\\}", folder);
+				properties.put(key, valueString);
+			}
 		}
 	}
 
 	public static RefPanel loadFromJson(String filename) throws JsonSyntaxException, JsonIOException, IOException {
 		Gson gson = (new GsonBuilder()).create();
-		Map<String, Object> refPanelMap = gson.fromJson(new FileReader(filename), Map.class);
+		Map<String, Object> panel = gson.fromJson(new FileReader(filename), Map.class);
+		return loadFromProperties(panel);
+	}
 
-		return loadFromProperties(refPanelMap);
+	public static RefPanel loadFromYamlFile(String filename, String id) throws IOException {
 
+		YamlReader reader = new YamlReader(new FileReader(filename));
+		List<Map<String, Object>> panels = reader.read(List.class);
+		for (Map<String, Object> panel : panels) {
+			if (panel.get("id").equals(id)) {
+				resolveEnvVariable(panel, (new File(filename).getParent()));
+				return loadFromProperties(panel);
+			}
+		}
+
+		throw new IOException("Reference panel '" + id + "' not found in file '" + filename + "'.");
+
+	}
+	
+	public static RefPanel loadFromYamlFile(String filename) throws IOException {
+		YamlReader reader = new YamlReader(new FileReader(filename));
+		Map<String, Object> panel = reader.read(Map.class);
+		return loadFromProperties(panel);
 	}
 
 }

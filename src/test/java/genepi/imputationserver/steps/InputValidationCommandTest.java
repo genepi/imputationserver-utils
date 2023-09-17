@@ -5,12 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
-import genepi.imputationserver.util.RefPanelUtil;
+import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.report.CloudgeneReport;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.util.TabixUtils;
@@ -28,93 +27,85 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testHg19DataWithBuild38() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/three";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setBuild("hg38");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
 
-		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg38 encoding."));
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
+		assertTrue(log.hasInMemory("This is not a valid hg38 encoding."));
+		assertTrue(log.hasInMemory("[ERROR]"));
 
 	}
 
 	@Test(expected = IOException.class)
 	public void testWithWrongReferencePanel() throws IOException {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
-//		TODO: test how command handles wrong filename --> nor RefPanelUtil.
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "missing-reference-panel");
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
+		RefPanel.loadFromYamlFile(panels, "missing-reference-panel");
 
 	}
 
 	@Test
 	public void testHg38DataWithBuild19() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr20";
+		String panels = "test-data/configs/hapmap-chr20/panels.txt";
 		String inputFolder = "test-data/data/chr20-unphased-hg38";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setBuild("hg19");
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("This is not a valid hg19 encoding."));
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR]"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("This is not a valid hg19 encoding."));
+		assertTrue(log.hasInMemory("[ERROR]"));
 
 	}
 
 	@Test
 	public void testWrongVcfFile() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/wrong_vcf";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Unable to parse header with error"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[ERROR] Unable to parse header with error"));
 
 	}
 
 	@Test
 	public void testMixedPopulation() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("mixed");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
@@ -123,16 +114,14 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testCorrectHrcPopulation() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hrc-fake");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hrc-fake");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("mixed");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
@@ -141,190 +130,173 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrongHrcPopulation() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hrc-fake");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hrc-fake");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("aas");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
 
 	}
 
 	@Test
 	public void testWrong1KP3Population() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "phase3-fake");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase3-fake");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("asn");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(
-				CloudgeneLog.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
 
 	}
 
 	@Test
 	public void testWrongTopmedPopulation() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "TOPMedfreeze6-fake");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "TOPMedfreeze6-fake");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("asn");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog
-				.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(
+				log.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 
 	}
 
 	@Test
 	public void testUnorderedVcfFile() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/unorderd";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file is malformed"));
-		assertTrue(CloudgeneLog.hasInMemory("Error during index creation"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[ERROR] The provided VCF file is malformed"));
+		assertTrue(log.hasInMemory("Error during index creation"));
 
 	}
 
 	@Test
 	public void testWrongChromosomes() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/wrong_chrs";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
 
 	}
 
 	@Test
 	public void testSingleUnphasedVcfWithEagle() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
-		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
-		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 1"));
-		assertTrue(CloudgeneLog.hasInMemory("SNPs: 905"));
-		assertTrue(CloudgeneLog.hasInMemory("Chunks: 1"));
-		assertTrue(CloudgeneLog.hasInMemory("Datatype: unphased"));
-		assertTrue(CloudgeneLog.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(CloudgeneLog.hasInMemory("Phasing: eagle"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		assertTrue(log.hasInMemory("Samples: 41"));
+		assertTrue(log.hasInMemory("Chromosomes: 1"));
+		assertTrue(log.hasInMemory("SNPs: 905"));
+		assertTrue(log.hasInMemory("Chunks: 1"));
+		assertTrue(log.hasInMemory("Datatype: unphased"));
+		assertTrue(log.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(log.hasInMemory("Phasing: eagle"));
 
 	}
 
 	@Test
 	public void testThreeUnphasedVcfWithEagle() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/three";
 		// create workflow context
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[OK] 3 valid VCF file(s) found."));
-		assertTrue(CloudgeneLog.hasInMemory("Samples: 41"));
-		assertTrue(CloudgeneLog.hasInMemory("Chromosomes: 2 3 4"));
-		assertTrue(CloudgeneLog.hasInMemory("SNPs: 2715"));
-		assertTrue(CloudgeneLog.hasInMemory("Chunks: 3"));
-		assertTrue(CloudgeneLog.hasInMemory("Datatype: unphased"));
-		assertTrue(CloudgeneLog.hasInMemory("Reference Panel: hapmap2"));
-		assertTrue(CloudgeneLog.hasInMemory("Phasing: eagle"));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[OK] 3 valid VCF file(s) found."));
+		assertTrue(log.hasInMemory("Samples: 41"));
+		assertTrue(log.hasInMemory("Chromosomes: 2 3 4"));
+		assertTrue(log.hasInMemory("SNPs: 2715"));
+		assertTrue(log.hasInMemory("Chunks: 3"));
+		assertTrue(log.hasInMemory("Datatype: unphased"));
+		assertTrue(log.hasInMemory("Reference Panel: hapmap2"));
+		assertTrue(log.hasInMemory("Phasing: eagle"));
 
 	}
 
 	@Test
 	public void testTabixIndexCreationChr20() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/chr20-phased";
 
 		// create workflow context
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
 
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/chr20.R50.merged.1.330k.recode.small.vcf.gz";
@@ -347,23 +319,21 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testTabixIndexCreationChr1() throws Exception {
 
-		String configFolder = "test-data/configs/hapmap-chr1";
+		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/single";
 
 		// create workflow context
-		Map<String, Object> panel = RefPanelUtil.loadFromFile(configFolder + "/panels.txt", "hapmap2");
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
-		InputValidationCommand command = new InputValidationCommand();
-		command.setFiles(getFiles(inputFolder));
-		command.setReference(panel);
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
 		command.setPopulation("eur");
-		command.setupTabix(TABIX_HOME);
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport CloudgeneLog = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(CloudgeneLog.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/minimac_test.50.vcf.gz";
 		VCFFileReader vcfReader = new VCFFileReader(new File(vcfFilename),
@@ -380,6 +350,15 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		// check snps
 		assertEquals(905, count);
 
+	}
+
+	private InputValidationCommand buildCommand(String inputFolder) {
+		InputValidationCommand command = new InputValidationCommand();
+		command.setMinSamples(1);
+		command.setFiles(getFiles(inputFolder));
+		command.setupTabix(TABIX_HOME);
+		command.setReport(CLOUDGENE_LOG);
+		return command;
 	}
 
 }

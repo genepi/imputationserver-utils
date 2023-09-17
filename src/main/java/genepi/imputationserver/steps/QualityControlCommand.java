@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -81,16 +80,8 @@ public class QualityControlCommand implements Callable<Integer> {
 		this.files = files;
 	}
 
-	public void setReference(Map<String, Object> reference) {
-
-		try {
-			panel = RefPanel.loadFromProperties(reference);
-			if (panel == null) {
-				context.error("Reference not found.");
-			}
-		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
-		}
+	public void setRefPanel(RefPanel panel) {
+		this.panel = panel;
 	}
 
 	public void setChainFile(String chainFile) {
@@ -115,6 +106,14 @@ public class QualityControlCommand implements Callable<Integer> {
 
 	public void setMetafilesOutput(String metafilesOutput) {
 		this.metafilesOutput = metafilesOutput;
+	}
+
+	public void setReport(String report) {
+		this.report = report;
+	}
+
+	public String getReport() {
+		return report;
 	}
 
 	protected void setupTabix(String path) {

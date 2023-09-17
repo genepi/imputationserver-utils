@@ -12,14 +12,14 @@ public class AbstractTestcase {
 	public static final boolean VERBOSE = true;
 
 	public static final String PASSWORD = "random-pwd";
-	
+
 	protected ArrayList<String> getFiles(String inputFolder) {
 		File folder = new File(inputFolder);
 		ArrayList<String> files = new ArrayList<String>();
-		
-		for (File file : folder.listFiles()){
-			if(file.getName().endsWith("vcf.gz")) {
-			files.add(file.getAbsolutePath());
+
+		for (File file : folder.listFiles()) {
+			if (file.getName().endsWith("vcf.gz")) {
+				files.add(file.getAbsolutePath());
 			}
 		}
 		return files;
@@ -70,16 +70,4 @@ public class AbstractTestcase {
 		return true;
 	}
 
-	
-	public void resolveEnvVariable(Map<String, Object> properties, String folder) {
-		for (String key: properties.keySet()) {
-			Object value = properties.get(key);
-			if (value instanceof String) {
-				String valueString = value.toString().replaceAll("\\$\\{app_local_folder\\}", folder);
-				properties.put(key, valueString);
-			}
-		}
-	}
-	
-	
 }
