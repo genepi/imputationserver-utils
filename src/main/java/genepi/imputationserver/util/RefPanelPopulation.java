@@ -52,7 +52,8 @@ public class RefPanelPopulation {
 				throw new IOException("Property 'name' not found in population list.");
 			}
 			if (property.containsKey("samples")) {
-				population.setSamples(Integer.parseInt(property.get("samples").toString()));
+				Double samples = Double.parseDouble(property.get("samples").toString());
+				population.setSamples(samples.intValue());
 			} else {
 				throw new IOException("Property 'samples' not found in population list.");
 			}
