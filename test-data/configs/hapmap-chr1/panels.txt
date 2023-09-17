@@ -5,12 +5,14 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      eur: 60
-      mixed: -1
     populations:
-      eur: EUR
-      mixed: Mixed
+      - id: eur
+        name: EUR
+        samples: 60
+      - id: mixed
+        name: Mixed
+        samples: -1
+
       
   - id: hrc-fake
     reference_build: hg19
@@ -18,12 +20,14 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      eur: 32488
-      mixed: -1
     populations:
-      eur: EUR
-      mixed: Mixed
+      - id: eur
+        name: EUR
+        samples: 32488
+      - id: mixed
+        name: Mixed
+        samples: -1
+
           
   - id: phase3-fake
     reference_build: hg19
@@ -31,20 +35,26 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      afr: 661
-      amr: 347
-      eas: 504
-      sas: 489
-      eur: 503
-      mixed: -1
     populations:
-      afr: AFR
-      amr: AMR
-      eas: EAS
-      sas: SAS
-      eur: EUR
-      mixed: Mixed     
+      - id: afr
+        name: AFR
+        samples: 661
+      - id: amr
+        name: AMR
+        samples: 347
+      - id: eas
+        name: EAS
+        samples: 504
+      - id: sas
+        name: SAS
+        samples: 489
+      - id: eur
+        name: EUR
+        samples: 503
+      - id: mixed
+        name: Mixed
+        samples: -1
+ 
       
   - id: TOPMedfreeze6-fake
     reference_build: hg19
@@ -52,21 +62,25 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      afr: 661
-      amr: 347
-      eas: 504
-      sas: 489
-      eur: 503
-      mixed: -1
     populations:
-      afr: AFR
-      amr: AMR
-      eas: EAS
-      sas: SAS
-      eur: EUR
-      mixed: Mixed
-      
+      - id: afr
+        name: AFR
+        samples: 661
+      - id: amr
+        name: AMR
+        samples: 347
+      - id: eas
+        name: EAS
+        samples: 504
+      - id: sas
+        name: SAS
+        samples: 489
+      - id: eur
+        name: EUR
+        samples: 503
+      - id: mixed
+        name: Mixed
+        samples: -1      
         
   - id: hapmap2-region-simple
     reference_build: hg19
@@ -74,12 +88,13 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      eur: 60
-      mixed: -1
     populations:
-      eur: EUR
-      mixed: Mixed
+      - id: eur
+        name: EUR
+        samples: 60
+      - id: mixed
+        name: Mixed
+        samples: -1
     range: 1:565111-752566   
     
   - id: hapmap2-region-complex
@@ -88,11 +103,12 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_chr1.txt
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      eur: 60
-      mixed: -1
     populations:
-      eur: EUR
-      mixed: Mixed
+      - id: eur
+        name: EUR
+        samples: 60
+      - id: mixed
+        name: Mixed
+        samples: -1
     range: 1:565111-752566, 1:90819447-90819447
   

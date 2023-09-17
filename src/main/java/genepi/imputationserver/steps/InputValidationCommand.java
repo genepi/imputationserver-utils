@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.RefPanel;
+import genepi.imputationserver.util.RefPanelPopulation;
 import genepi.imputationserver.util.importer.ImporterFactory;
 import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
@@ -315,8 +316,8 @@ public class InputValidationCommand implements Callable<Integer> {
 						+ "'.\n");
 				if (panel.getPopulations() != null) {
 					report.append("Available populations:");
-					for (String pop : panel.getPopulations().values()) {
-						report.append("\n - " + pop);
+					for (RefPanelPopulation pop : panel.getPopulations()) {
+						report.append("\n - " + pop.getId());
 					}
 				}
 				context.error(report.toString());

@@ -5,7 +5,10 @@
     legend: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg19_withX.txt.gz
     refEagle: ${app_local_folder}/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf
-    samples:
-      eur: 60
     populations:
-      eur: EUR
+      - id: eur
+        name: EUR
+        samples: 60
+      - id: mixed
+        name: Mixed
+        samples: -1

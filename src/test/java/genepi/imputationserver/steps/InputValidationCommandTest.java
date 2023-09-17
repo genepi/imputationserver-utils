@@ -39,7 +39,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-
+log.view();
 		assertTrue(log.hasInMemory("This is not a valid hg38 encoding."));
 		assertTrue(log.hasInMemory("[ERROR]"));
 

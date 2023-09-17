@@ -22,6 +22,7 @@ import genepi.imputationserver.steps.fastqc.StatisticsTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.RefPanel;
+import genepi.imputationserver.util.RefPanelPopulation;
 import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
@@ -213,8 +214,8 @@ public class QualityControlCommand implements Callable<Integer> {
 					"Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.\n");
 			if (panel.getPopulations() != null) {
 				report.append("Available populations:");
-				for (String pop : panel.getPopulations().values()) {
-					report.append("\n - " + pop);
+				for (RefPanelPopulation pop : panel.getPopulations()) {
+					report.append("\n - " + pop.getId());
 				}
 			}
 			context.error(report.toString());

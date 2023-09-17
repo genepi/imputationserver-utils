@@ -6,7 +6,10 @@
     mapEagle: ${app_local_folder}/ref-panels/genetic_map_hg38_withX.txt.gz
     refEagle: ${app_local_folder}/ref-panels/ALL.$chr.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.hg38.bcf
     build: hg38
-    samples:
-      eur: 60
     populations:
-      eur: EUR
+      - id: eur
+        name: EUR
+        samples: 60
+      - id: mixed
+        name: Mixed
+        samples: -1

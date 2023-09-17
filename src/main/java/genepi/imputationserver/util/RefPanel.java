@@ -39,9 +39,7 @@ public class RefPanel {
 
 	private String mapBeagle;
 
-	private Map<String, String> samples;
-
-	private Map<String, String> populations;
+	private List<RefPanelPopulation> populations;
 
 	private Map<String, String> defaultQcFilter;
 
@@ -125,46 +123,45 @@ public class RefPanel {
 		return refEagle;
 	}
 
-	public void setSamples(Map<String, String> samples) {
-		this.samples = samples;
-	}
-
-	public Map<String, String> getSamples() {
-		return samples;
-	}
-
 	public int getSamplesByPopulation(String population) {
-		if (samples == null) {
+		if (population == null) {
 			return 0;
 		}
-		String n = samples.get(population);
-		if (n != null) {
-			return Integer.parseInt(n);
+		
+		RefPanelPopulation panelPopulation = getPopulation(population);
+		if (panelPopulation != null) {
+			return panelPopulation.getSamples();
 		} else {
 			return 0;
 		}
 	}
 
-	public void setPopulations(Map<String, String> populations) {
+	public void setPopulations(List<RefPanelPopulation> populations) {
 		this.populations = populations;
 	}
 
-	public Map<String, String> getPopulations() {
+	public List<RefPanelPopulation> getPopulations() {
 		return populations;
 	}
 
 	public boolean supportsPopulation(String population) {
-
 		if (population == null || population.equals("")) {
 			return true;
-		}
+		}		
+		return (getPopulation(population) != null);
+	}
 
+	public RefPanelPopulation getPopulation(String id) {
 		if (populations == null) {
-			return false;
-		} else {
-			return populations.containsKey(population);
+			return null;
 		}
 
+		for (RefPanelPopulation population : populations) {
+			if (population.getId().equalsIgnoreCase(id)) {
+				return population;
+			}
+		}
+		return null;
 	}
 
 	public Map<String, String> getQcFilter() {
@@ -203,7 +200,7 @@ public class RefPanel {
 		this.mapBeagle = mapBeagle;
 	}
 
-	public static RefPanel loadFromProperties(Object properties) throws IOException {
+	public static RefPanel fromProperties(Object properties) throws IOException {
 
 		if (properties == null) {
 			throw new IOException("Propertie map not set.");
@@ -247,16 +244,9 @@ public class RefPanel {
 		}
 
 		if (map.get("populations") != null) {
-			panel.setPopulations((Map<String, String>) map.get("populations"));
+			panel.setPopulations(RefPanelPopulation.fromProperties((List<Map<String, Object>>) map.get("populations")));
 		} else {
 			throw new IOException("Property 'populations' not found in cloudgene.yaml.");
-		}
-
-		if (map.get("samples") != null) {
-			panel.setSamples((Map<String, String>) map.get("samples"));
-			;
-		} else {
-			throw new IOException("Property 'samples' not found in cloudgene.yaml.");
 		}
 
 		if (map.get("qcFilter") != null) {
@@ -266,6 +256,10 @@ public class RefPanel {
 		// optional parameters
 		if (map.get("reference_build") != null) {
 			panel.setBuild(map.get("reference_build").toString());
+		}
+		
+		if (map.get("build") != null) {
+			panel.setBuild(map.get("build").toString());
 		}
 
 		if (map.get("range") != null) {
@@ -297,7 +291,7 @@ public class RefPanel {
 	public static RefPanel loadFromJson(String filename) throws JsonSyntaxException, JsonIOException, IOException {
 		Gson gson = (new GsonBuilder()).create();
 		Map<String, Object> panel = gson.fromJson(new FileReader(filename), Map.class);
-		return loadFromProperties(panel);
+		return fromProperties(panel);
 	}
 
 	public static RefPanel loadFromYamlFile(String filename, String id) throws IOException {
@@ -307,18 +301,18 @@ public class RefPanel {
 		for (Map<String, Object> panel : panels) {
 			if (panel.get("id").equals(id)) {
 				resolveEnvVariable(panel, (new File(filename).getParent()));
-				return loadFromProperties(panel);
+				return fromProperties(panel);
 			}
 		}
 
 		throw new IOException("Reference panel '" + id + "' not found in file '" + filename + "'.");
 
 	}
-	
+
 	public static RefPanel loadFromYamlFile(String filename) throws IOException {
 		YamlReader reader = new YamlReader(new FileReader(filename));
 		Map<String, Object> panel = reader.read(Map.class);
-		return loadFromProperties(panel);
+		return fromProperties(panel);
 	}
 
 }
