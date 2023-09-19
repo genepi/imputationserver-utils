@@ -1,6 +1,5 @@
 package genepi.imputationserver;
 
-import genepi.imputationserver.steps.EncryptionCommand;
 import genepi.imputationserver.steps.EstimateAncestryCommand;
 import genepi.imputationserver.steps.InputValidationCommand;
 import genepi.imputationserver.steps.QualityControlCommand;
@@ -38,7 +37,6 @@ public class App {
 		CommandLine commandLine = new CommandLine(new App());
 		commandLine.addSubcommand("validate", new InputValidationCommand());
 		commandLine.addSubcommand("run-qc", new QualityControlCommand());
-		commandLine.addSubcommand("encrypt", new EncryptionCommand());
 		commandLine.addSubcommand("estimate-ancestry", new EstimateAncestryCommand());
 		commandLine.addSubcommand("prepare-trace", new PrepareTraceCommand());
 		commandLine.setExecutionStrategy(new CommandLine.RunLast());
