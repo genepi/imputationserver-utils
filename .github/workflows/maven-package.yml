@@ -1,9 +1,7 @@
 
 name: Run Tests
 
-on:
-  release:
-    types: [created]
+on: [push, pull_request]
 
 jobs:
   build:
