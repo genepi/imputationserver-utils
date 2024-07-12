@@ -480,15 +480,12 @@ public class StatisticsTask implements ITask {
 
 				if (insideChunk) {
 
-					//TODO: filter allele switches?
 					alleleSwitch++;
+					filtered++;
+					excludedSnpsWriter.write(snp + "\t" + "Allele switch" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
 					
-					/*
-					 * logWriter.write("Allele switch" + snp.getID() + "\t" + chr + ":"+
-					 * snp.getStart() + "\t" + "ref: " + legendRef + "/" + legendAlt + "; data: " +
-					 * studyRef + "/" + studyAlt + ")");
-					 */
 				}
+				return;
 
 			}
 
