@@ -443,6 +443,46 @@ public class QualityControlCommandTest extends AbstractTestcase {
 				"<b>Error:</b> More than -1 obvious strand flips have been detected. Please check strand. Imputation cannot be started!"));
 
 	}
+	
+	@Test
+	public void testQcStatisticsAllowAlleleSwitches() throws Exception {
+
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
+		String inputFolder = "test-data/data/simulated-chip-3chr-imputation-switches";
+
+		// create workflow context
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
+		assertEquals(0, (int) command.call());
+		
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+
+		assertTrue(log.hasInMemory("Excluded sites in total: 2,967"));
+		assertTrue(log.hasInMemory("Allele switch: 118,209"));
+	}
+
+	@Test
+	public void testQcStatisticsDontAllowAlleleSwitches() throws Exception {
+
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
+		String inputFolder = "test-data/data/simulated-chip-3chr-imputation-switches";
+
+		// create workflow context
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-alleleswitches");
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
+		assertEquals(-1, (int) command.call());
+		
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		
+		// check statistics
+		assertTrue(log.hasInMemory("Excluded sites in total: 2,967"));
+		assertTrue(log.hasInMemory("Allele switch: 118,209"));
+		assertTrue(log.hasInMemory("<b>Error:</b> More than 33 allele switches have been detected. Imputation cannot be started!"));
+	}
 
 	@Test
 	public void testQcStatisticsFilterOverlap() throws Exception {

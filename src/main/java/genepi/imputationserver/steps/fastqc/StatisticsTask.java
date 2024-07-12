@@ -83,7 +83,7 @@ public class StatisticsTask implements ITask {
 
 	private boolean chrXMissingRate = false;
 	private boolean chrXPloidyError = false;
-
+ 
 	// chunk results
 	private int removedChunksSnps;
 	private int removedChunksOverlap;
@@ -480,7 +480,9 @@ public class StatisticsTask implements ITask {
 
 				if (insideChunk) {
 
+					//TODO: filter allele switches?
 					alleleSwitch++;
+					
 					/*
 					 * logWriter.write("Allele switch" + snp.getID() + "\t" + chr + ":"+
 					 * snp.getStart() + "\t" + "ref: " + legendRef + "/" + legendAlt + "; data: " +
