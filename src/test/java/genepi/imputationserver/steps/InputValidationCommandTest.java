@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
 import genepi.imputationserver.util.RefPanel;
-import genepi.imputationserver.util.report.CloudgeneReport;
+import genepi.imputationserver.util.OutputReader;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.tribble.util.TabixUtils;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -38,10 +38,9 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-log.view();
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("This is not a valid hg38 encoding."));
-		assertTrue(log.hasInMemory("[ERROR]"));
+		assertTrue(log.hasInMemory("::error::"));
 
 	}
 
@@ -68,10 +67,9 @@ log.view();
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		log.view();
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("This is not a valid hg19 encoding."));
-		assertTrue(log.hasInMemory("[ERROR]"));
+		assertTrue(log.hasInMemory("::error::"));
 
 	}
 
@@ -90,8 +88,8 @@ log.view();
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[ERROR] Unable to parse header with error"));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("::error:: Unable to parse header with error"));
 
 	}
 
@@ -142,8 +140,9 @@ log.view();
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[ERROR] Population 'aas' is not supported by reference panel 'hrc-fake'"));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("::group type=error::"));
+		assertTrue(log.hasInMemory("Population 'aas' is not supported by reference panel 'hrc-fake'"));
 
 	}
 
@@ -162,8 +161,9 @@ log.view();
 		assertEquals(-1, (int) command.call());
 
 		// check error message
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'phase3-fake'"));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("::group type=error::"));
+		assertTrue(log.hasInMemory("Population 'asn' is not supported by reference panel 'phase3-fake'"));
 
 	}
 
@@ -181,10 +181,10 @@ log.view();
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(
-				log.hasInMemory("[ERROR] Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
-
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("::group type=error::"));
+		assertTrue(log.hasInMemory("Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 	}
 
 	@Test
@@ -202,8 +202,8 @@ log.view();
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[ERROR] The provided VCF file is malformed"));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("::error:: The provided VCF file is malformed"));
 		assertTrue(log.hasInMemory("Error during index creation"));
 
 	}
@@ -222,8 +222,8 @@ log.view();
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[ERROR] The provided VCF file contains more than one chromosome."));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("::error:: The provided VCF file contains more than one chromosome."));
 
 	}
 
@@ -241,8 +241,9 @@ log.view();
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("1 valid VCF file(s) found."));
 		assertTrue(log.hasInMemory("Samples: 41"));
 		assertTrue(log.hasInMemory("Chromosomes: 1"));
 		assertTrue(log.hasInMemory("SNPs: 905"));
@@ -267,8 +268,8 @@ log.view();
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[OK] 3 valid VCF file(s) found."));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("3 valid VCF file(s) found."));
 		assertTrue(log.hasInMemory("Samples: 41"));
 		assertTrue(log.hasInMemory("Chromosomes: 2 3 4"));
 		assertTrue(log.hasInMemory("SNPs: 2715"));
@@ -295,8 +296,9 @@ log.view();
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("1 valid VCF file(s) found."));
+		assertTrue(log.hasInMemory("Samples: 51"));
 
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/chr20.R50.merged.1.330k.recode.small.vcf.gz";
@@ -332,8 +334,8 @@ log.view();
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
-		assertTrue(log.hasInMemory("[OK] 1 valid VCF file(s) found."));
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("1 valid VCF file(s) found."));
 		// test tabix index and count snps
 		String vcfFilename = inputFolder + "/minimac_test.50.vcf.gz";
 		VCFFileReader vcfReader = new VCFFileReader(new File(vcfFilename),
