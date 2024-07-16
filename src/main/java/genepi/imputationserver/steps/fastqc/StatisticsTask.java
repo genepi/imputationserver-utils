@@ -83,7 +83,7 @@ public class StatisticsTask implements ITask {
 
 	private boolean chrXMissingRate = false;
 	private boolean chrXPloidyError = false;
-
+ 
 	// chunk results
 	private int removedChunksSnps;
 	private int removedChunksOverlap;
@@ -481,12 +481,11 @@ public class StatisticsTask implements ITask {
 				if (insideChunk) {
 
 					alleleSwitch++;
-					/*
-					 * logWriter.write("Allele switch" + snp.getID() + "\t" + chr + ":"+
-					 * snp.getStart() + "\t" + "ref: " + legendRef + "/" + legendAlt + "; data: " +
-					 * studyRef + "/" + studyAlt + ")");
-					 */
+					filtered++;
+					excludedSnpsWriter.write(snp + "\t" + "Allele switch" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
+					
 				}
+				return;
 
 			}
 

@@ -241,8 +241,9 @@ public class QualityControlCommand implements Callable<Integer> {
 		double sampleCallrate = panel.getQcFilterByKey("sampleCallrate");
 		double mixedGenotypesChrX = panel.getQcFilterByKey("mixedGenotypeschrX");
 		int strandFlips = (int) (panel.getQcFilterByKey("strandFlips"));
+		int alleleSwitches = (int) (panel.getQcFilterByKey("alleleSwitches"));
 		String ranges = panel.getRange();
-
+		
 		if (ranges != null) {
 			HashSet<RangeEntry> rangeEntries = new HashSet<RangeEntry>();
 
@@ -381,6 +382,15 @@ public class QualityControlCommand implements Callable<Integer> {
 		else if (task.getStrandFlipSimple() + task.getStrandFlipAndAlleleSwitch() > strandFlips) {
 			text.append("\n<b>Error:</b> More than " + strandFlips
 					+ " obvious strand flips have been detected. Please check strand. Imputation cannot be started!");
+			context.error(text.toString());
+
+			return false;
+		}
+
+		// Check if too many allele switches are detected
+		else if (task.getAlleleSwitch() + task.getStrandFlipAndAlleleSwitch() > alleleSwitches) {
+			text.append("<br><b>Error:</b> More than " + alleleSwitches
+					+ " allele switches have been detected. Imputation cannot be started!");
 			context.error(text.toString());
 
 			return false;

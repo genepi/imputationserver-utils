@@ -445,6 +445,27 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
+	public void testQcStatisticsDontAllowAlleleSwitches() throws Exception {
+
+		String panels = "test-data/configs/hapmap-3chr/panels.txt";
+		String inputFolder = "test-data/data/simulated-chip-3chr-imputation-switches";
+
+		// create workflow context
+		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-alleleswitches");
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setRefPanel(panel);
+		assertEquals(-1, (int) command.call());
+		
+		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		
+		// check statistics
+		assertTrue(log.hasInMemory("Excluded sites in total: 121,176"));
+		assertTrue(log.hasInMemory("Allele switch: 118,209"));
+		assertTrue(log.hasInMemory("No chunks passed the QC step. Imputation cannot be started!"));
+	}
+
+	@Test
 	public void testQcStatisticsFilterOverlap() throws Exception {
 
 		String panels = "test-data/configs/hapmap-3chr/panels.txt";

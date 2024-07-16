@@ -15,6 +15,7 @@ import com.google.gson.JsonSyntaxException;
 
 public class RefPanel {
 
+	public static final String ALLELE_SWITCHES = String.valueOf(Integer.MAX_VALUE);
 	public static final String STRAND_FLIPS = "100";
 	public static final String SAMPLE_CALL_RATE = "0.5";
 	public static final String MIN_SNPS = "3";
@@ -57,6 +58,7 @@ public class RefPanel {
 		defaultQcFilter.put("sampleCallrate", SAMPLE_CALL_RATE);
 		defaultQcFilter.put("mixedGenotypeschrX", CHR_X_MIXED_GENOTYPES);
 		defaultQcFilter.put("strandFlips", STRAND_FLIPS);
+		defaultQcFilter.put("alleleSwitches", ALLELE_SWITCHES);
 	}
 
 	public String getId() {
@@ -127,7 +129,7 @@ public class RefPanel {
 		if (population == null) {
 			return 0;
 		}
-		
+
 		RefPanelPopulation panelPopulation = getPopulation(population);
 		if (panelPopulation != null) {
 			return panelPopulation.getSamples();
@@ -147,7 +149,7 @@ public class RefPanel {
 	public boolean supportsPopulation(String population) {
 		if (population == null || population.equals("")) {
 			return true;
-		}		
+		}
 		return (getPopulation(population) != null);
 	}
 
@@ -169,15 +171,24 @@ public class RefPanel {
 	}
 
 	public double getQcFilterByKey(String key) {
+
 		if (qcFilter == null) {
 			qcFilter = defaultQcFilter;
 		}
-		String n = qcFilter.get(key);
-		if (n != null) {
-			return Double.parseDouble(n);
-		} else {
+		Object n = qcFilter.get(key);
+
+		if (n == null) {
 			return Double.parseDouble(defaultQcFilter.get(key));
 		}
+
+		if (n instanceof String) {
+			return Double.parseDouble((String) n);
+		} else if (n instanceof Number) {
+			return ((Number) n).doubleValue();
+		} else {
+			throw new IllegalArgumentException("Value associated with key is neither a String nor a Number: " + n);
+		}
+
 	}
 
 	public void setQcFilter(Map<String, String> qcFilter) {
@@ -257,7 +268,7 @@ public class RefPanel {
 		if (map.get("reference_build") != null) {
 			panel.setBuild(map.get("reference_build").toString());
 		}
-		
+
 		if (map.get("build") != null) {
 			panel.setBuild(map.get("build").toString());
 		}
