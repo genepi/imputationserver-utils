@@ -6,15 +6,12 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import genepi.imputationserver.util.OutputWriter;
 
 import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.RefPanelPopulation;
-import genepi.imputationserver.util.importer.ImporterFactory;
-import genepi.imputationserver.util.report.CloudgeneReport;
-import genepi.io.FileUtil;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -59,11 +56,11 @@ public class InputValidationCommand implements Callable<Integer> {
 	private String contactEmail = "n/a";
 
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
-	private String report = "cloudgene.report.json";
-
-	private CloudgeneReport context = new CloudgeneReport();
+	private String report = null;
 
 	private RefPanel panel = null;
+
+	private OutputWriter output = null;
 
 	public InputValidationCommand() {
 		VcfFileUtil.setTabixBinary("tabix");
@@ -128,26 +125,22 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Override
 	public Integer call() throws Exception {
 
-		context.setFilename(report);
+		if (report != null) {
+			output = new OutputWriter(report);
+		} else {
+			output = new OutputWriter();
+		}
 
 		if (panel == null) {
 			try {
 				panel = RefPanel.loadFromJson(reference);
-				if (panel == null) {
-					context.error("Reference not found.");
-					return -1;
-				}
 			} catch (Exception e) {
-				context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+				output.error("Unable to parse reference panel:" ,e);
 				return -1;
 			}
 		}
 
 		if (!checkParameters()) {
-			return -1;
-		}
-
-		if (!importVcfFiles()) {
 			return -1;
 		}
 
@@ -162,8 +155,6 @@ public class InputValidationCommand implements Callable<Integer> {
 	private boolean checkVcfFiles() throws Exception {
 
 		List<VcfFile> validVcfFiles = new Vector<VcfFile>();
-
-		context.beginTask("Analyze files ");
 		List<String> chromosomes = new Vector<String>();
 
 		int chunks = 0;
@@ -173,20 +164,8 @@ public class InputValidationCommand implements Callable<Integer> {
 		boolean phased = true;
 
 		Collections.sort(files);
-		String infos = null;
 
 		for (String filename : files) {
-
-			if (infos == null) {
-				// first files, no infos available
-				context.updateTask(
-						"Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename)) + "...",
-						CloudgeneReport.RUNNING);
-
-			} else {
-				context.updateTask("Analyze file " + StringEscapeUtils.escapeHtml(FileUtil.getFilename(filename))
-						+ "...\n\n" + infos, CloudgeneReport.RUNNING);
-			}
 
 			try {
 
@@ -196,114 +175,105 @@ public class InputValidationCommand implements Callable<Integer> {
 					vcfFile.setPhased(true);
 				}
 
-				if (VcfFileUtil.isValidChromosome(vcfFile.getChromosome())) {
-
-					validVcfFiles.add(vcfFile);
-					chromosomes.add(vcfFile.getChromosome());
-
-					String chromosomeString = "";
-					for (String chr : chromosomes) {
-						chromosomeString += " " + chr;
-					}
-
-					// check if all files have same amount of samples
-					if (noSamples != 0 && noSamples != vcfFile.getNoSamples()) {
-						context.endTask(
-								"Please double check, if all uploaded VCF files include the same amount of samples ("
-										+ vcfFile.getNoSamples() + " vs " + noSamples + ")",
-								CloudgeneReport.ERROR);
-						return false;
-					}
-
-					noSamples = vcfFile.getNoSamples();
-					noSnps += vcfFile.getNoSnps();
-					chunks += vcfFile.getChunks().size();
-
-					phased = phased && vcfFile.isPhased();
-
-					if (vcfFile.isPhasedAutodetect() && !vcfFile.isPhased()) {
-
-						context.endTask(
-								"File should be phased, but also includes unphased and/or missing genotypes! Please double-check!",
-								CloudgeneReport.ERROR);
-						return false;
-					}
-
-					if (noSamples < minSamples && minSamples != 0) {
-						context.endTask("At least " + minSamples + " samples must be uploaded.", CloudgeneReport.ERROR);
-						return false;
-					}
-
-					if (noSamples > maxSamples && maxSamples != 0) {
-
-						context.endTask("The maximum number of samples is " + maxSamples + ". Please contact "
-								+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
-								+ "</a>) to discuss this large imputation.", CloudgeneReport.ERROR);
-						return false;
-					}
-
-					if (build.equals("hg19") && vcfFile.hasChrPrefix()) {
-						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
-								+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
-								+ vcfFile.getChromosome() + "'.", CloudgeneReport.ERROR);
-						return false;
-					}
-
-					if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
-						context.endTask("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
-								+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
-								+ vcfFile.getChromosome() + "'.", CloudgeneReport.ERROR);
-						return false;
-					}
-
-					infos = "Samples: " + noSamples + "\n" + "Chromosomes:" + chromosomeString + "\n" + "SNPs: "
-							+ noSnps + "\n" + "Chunks: " + chunks + "\n" + "Datatype: "
-							+ (phased ? "phased" : "unphased") + "\n" + "Build: " + (build == null ? "hg19" : build)
-							+ "\n" + "Reference Panel: " + panel.getId() + " (" + panel.getBuild() + ")" + "\n"
-							+ "Population: " + population + "\n" + "Phasing: " + phasing + "\n" + "Mode: " + mode;
-
-					if (r2Filter != null && !r2Filter.isEmpty() && !r2Filter.equals("0")) {
-						infos += "\nRsq filter: " + r2Filter;
-					}
-
-				} else {
-					context.endTask("No valid chromosomes found!", CloudgeneReport.ERROR);
+				if (!VcfFileUtil.isValidChromosome(vcfFile.getChromosome())) {
+					output.error("No valid chromosomes found!");
 					return false;
 				}
 
-			} catch (IOException e) {
-				context.endTask(StringEscapeUtils.escapeHtml(e.getMessage())
-						+ " (see <a href=\"/start.html#!pages/help\">Help</a>).", CloudgeneReport.ERROR);
-				return false;
+				validVcfFiles.add(vcfFile);
+				chromosomes.add(vcfFile.getChromosome());
 
+				// check if all files have same amount of samples
+				if (noSamples != 0 && noSamples != vcfFile.getNoSamples()) {
+					output.error("Please double check, if all uploaded VCF files include the same amount of samples ("
+									+ vcfFile.getNoSamples() + " vs " + noSamples + ")");
+					return false;
+				}
+
+				noSamples = vcfFile.getNoSamples();
+				noSnps += vcfFile.getNoSnps();
+				chunks += vcfFile.getChunks().size();
+
+				phased = phased && vcfFile.isPhased();
+
+				if (vcfFile.isPhasedAutodetect() && !vcfFile.isPhased()) {
+					output.error("File should be phased, but also includes unphased and/or missing genotypes! Please double-check!");
+					return false;
+				}
+
+				if (noSamples < minSamples && minSamples != 0) {
+					output.error("At least " + minSamples + " samples must be uploaded.");
+					return false;
+				}
+
+				if (noSamples > maxSamples && maxSamples != 0) {
+
+					output.error("The maximum number of samples is " + maxSamples + ". Please contact "
+							+ contactName + " (<a href=\"" + contactEmail + "\">" + contactEmail
+							+ "</a>) to discuss this large imputation.");
+					return false;
+				}
+
+				if (build.equals("hg19") && vcfFile.hasChrPrefix()) {
+					output.error("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
+							+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
+							+ vcfFile.getChromosome() + "'.");
+					return false;
+				}
+
+				if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
+					output.error("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
+							+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
+							+ vcfFile.getChromosome() + "'.");
+					return false;
+				}
+
+
+			} catch (IOException e) {
+				output.error(e);
+				return false;
 			}
 
 		}
 
-		if (validVcfFiles.size() > 0) {
-
-			context.endTask(validVcfFiles.size() + " valid VCF file(s) found.\n\n" + infos, CloudgeneReport.OK);
-
-			if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
-				context.error("Your input data is unphased. Please select an algorithm for phasing.");
-				return false;
-			}
-
-			// init counters
-			context.incCounter("samples", noSamples);
-			context.incCounter("genotypes", noSamples * noSnps);
-			context.incCounter("chromosomes", noSamples * chromosomes.size());
-			context.incCounter("runs", 1);
-			context.incCounter("refpanel_" + panel.getId(), 1);
-			context.incCounter("phasing_" + "eagle", 1);
-			return true;
-
-		} else {
-
-			context.endTask("The provided files are not VCF files  (see <a href=\"/start.html#!pages/help\">Help</a>).",
-					CloudgeneReport.ERROR);
+		if (validVcfFiles.isEmpty()) {
+			output.error("The provided files are not VCF files (see <a href=\"/start.html#!pages/help\">Help</a>).");
 			return false;
 		}
+
+		if (!phased && (phasing == null || phasing.isEmpty() || phasing.equals("no_phasing"))) {
+			output.error("Your input data is unphased. Please select an algorithm for phasing.");
+			return false;
+		}
+
+		List<String> summary = new Vector<String>();
+		summary.add(validVcfFiles.size() + " valid VCF file(s) found.");
+		summary.add("");
+		summary.add("Samples: " + noSamples);
+		summary.add("Chromosomes: " + String.join(" ", chromosomes));
+		summary.add("SNPs: " + noSnps);
+		summary.add("Chunks: " + chunks);
+		summary.add("Datatype: " + (phased ? "phased" : "unphased"));
+		summary.add("Build: " + (build == null ? "hg19" : build));
+		summary.add("Reference Panel: " + panel.getId() + " (" + panel.getBuild() + ")" );
+		summary.add("Population: " + population);
+		summary.add("Phasing: " + phasing);
+		summary.add("Mode: " + mode);
+		if (r2Filter != null && !r2Filter.isEmpty() && !r2Filter.equals("0")) {
+			summary.add("Rsq filter: " + r2Filter);
+		}
+		output.message(summary);
+
+		// init counters
+		output.print("");
+		output.setCounter("samples", noSamples);
+		output.setCounter("genotypes", noSamples * noSnps);
+		output.setCounter("chromosomes", noSamples * chromosomes.size());
+		output.setCounter("runs", 1);
+		output.setCounter("refpanel_" + panel.getId(), 1);
+		output.setCounter("phasing_" + "eagle", 1); //phasing?
+		return true;
+
 	}
 
 	private boolean checkParameters() throws Exception {
@@ -311,42 +281,24 @@ public class InputValidationCommand implements Callable<Integer> {
 		try {
 
 			if (!panel.supportsPopulation(population)) {
-				StringBuilder report = new StringBuilder();
-				report.append("Population '" + population + "' is not supported by reference panel '" + panel.getId()
-						+ "'.\n");
+				List<String> messages = new Vector<String>();
+				messages.add("Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.");
 				if (panel.getPopulations() != null) {
-					report.append("Available populations:");
+					messages.add("Available populations:");
 					for (RefPanelPopulation pop : panel.getPopulations()) {
-						report.append("\n - " + pop.getId());
+						messages.add(" - " + pop.getId());
 					}
 				}
-				context.error(report.toString());
+				output.error(messages);
 				return false;
 			}
 
 		} catch (Exception e) {
-			context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+			output.error("Unable to parse reference panel. ", e);
 			return false;
 		}
 
 		return true;
-	}
-
-	private boolean importVcfFiles() throws Exception {
-
-		for (String input : files) {
-
-			if (ImporterFactory.needsImport(input)) {
-
-				context.log("URL-based uploads are no longer supported. Please use direct file uploads instead.");
-				context.error("URL-based uploads are no longer supported. Please use direct file uploads instead.");
-				return false;
-			}
-
-		}
-
-		return true;
-
 	}
 
 }

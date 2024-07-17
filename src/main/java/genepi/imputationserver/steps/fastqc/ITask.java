@@ -4,6 +4,6 @@ public interface ITask {
 
 	public String getName();
 	
-	public TaskResults run(ITaskProgressListener progressListener) throws Exception;
+	public TaskResults run() throws Exception;
 
 }

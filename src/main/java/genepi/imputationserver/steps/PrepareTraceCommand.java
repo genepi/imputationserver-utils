@@ -2,19 +2,16 @@ package genepi.imputationserver.steps;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 import genepi.imputationserver.steps.ancestry.TraceInputValidation;
 import genepi.imputationserver.steps.ancestry.TraceInputValidation.TraceInputValidationResult;
 import genepi.imputationserver.steps.fastqc.ITask;
-import genepi.imputationserver.steps.fastqc.ITaskProgressListener;
 import genepi.imputationserver.steps.fastqc.LiftOverTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
-import genepi.imputationserver.util.report.CloudgeneReport;
+import genepi.imputationserver.util.OutputWriter;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
 import htsjdk.variant.vcf.VCFFileReader;
@@ -42,11 +39,13 @@ public class PrepareTraceCommand implements Callable<Integer> {
 	@Option(names = "--output", description = "Output", required = true)
 	private String output;
 
-	@Option(names = "--report", description = "Report file", required = true)
-	private String reportFilename;
+	@Option(names = "--report", description = "Report file", required = false)
+	private String reportFilename = null;
 
 	@Option(names = "--reference-sites", description = "Reference Sites", required = true)
 	private String referenceSites;
+	
+	private OutputWriter outputWriter = null;
 
 	public PrepareTraceCommand() {
 		VcfFileUtil.setTabixBinary("tabix");
@@ -61,17 +60,20 @@ public class PrepareTraceCommand implements Callable<Integer> {
 		return prepareTraceJobs() ? 0 : -1;
 	}
 
-	public boolean prepareTraceJobs() {
-
-		CloudgeneReport report = new CloudgeneReport();
-		report.setFilename(reportFilename);
+	public boolean prepareTraceJobs() throws Exception {
+		
+		if (reportFilename != null) {
+			outputWriter = new OutputWriter(reportFilename);
+		} else {
+			outputWriter = new OutputWriter();
+		}
 
 		try {
 
 			// Check if liftover is needed
 			if (!buildGwas.equals(BUILD)) {
 
-				report.warning("Uploaded data is " + buildGwas + " and reference is " + BUILD + ".");
+				outputWriter.warning("Uploaded data is " + buildGwas + " and reference is " + BUILD + ".");
 				String chainFile = "";//TODO!!
 				/*if (chainFile == null) {
 					report.error("Currently we do not support liftOver from " + buildGwas + " to " + BUILD);
@@ -80,7 +82,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 
 				String fullPathChainFile = "";
 				if (!new File(fullPathChainFile).exists()) {
-					report.error("Chain file " + fullPathChainFile + " not found.");
+					outputWriter.error("Chain file " + fullPathChainFile + " not found.");
 					return false;
 				}
 
@@ -93,7 +95,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 				task.setChunksDir(chunksDir);
 				task.setExcludedSnpsWriter(null);
 
-				TaskResults results = runTask(report, task);
+				TaskResults results = runTask(outputWriter, task);
 
 				if (results.isSuccess()) {
 					files = task.getNewVcfFilenames();
@@ -105,7 +107,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 
 			String mergedFile = FileUtil.path(output, "study.merged.vcf.gz");
 
-			if (!checkDataAndMerge(report, files, mergedFile)) {
+			if (!checkDataAndMerge(outputWriter, files, mergedFile)) {
 				return false;
 			}
 
@@ -134,24 +136,24 @@ public class PrepareTraceCommand implements Callable<Integer> {
 				start = end + 1;
 				batch++;
 
-				report.log("Created batch No. " + batch);
+				outputWriter.log("Created batch No. " + batch);
 			}
 
-			report.ok("Prepared " + batch + " batch job" + ((batch > 1) ? "s." : "."));
+			outputWriter.message("Prepared " + batch + " batch job" + ((batch > 1) ? "s." : "."));
 
 			return true;
 
 		} catch (IOException e) {
-			report.error("An internal server error occured.");
+			outputWriter.error("An internal server error occured.");
 			e.printStackTrace();
 		}
 
-		report.error("Execution failed. Please, contact administrator.");
+		outputWriter.error("Execution failed. Please, contact administrator.");
 
 		return false;
 	}
 
-	public boolean checkDataAndMerge(CloudgeneReport report, String[] files, String mergedFile) {
+	public boolean checkDataAndMerge(OutputWriter output, String[] files, String mergedFile) {
 
 		try {
 
@@ -164,10 +166,10 @@ public class PrepareTraceCommand implements Callable<Integer> {
 					+ result.getAlleleSwitches() + "\n" + "Variants not found in reference: " + result.getNotFound()
 					+ "\n" + "Overlapping variants used by LASER: " + result.getFound();
 
-			report.ok(message);
+			output.message(message);
 
 			if (result.getFound() <= MIN_VARIANTS) {
-				report.error("Number of variants shared with reference is too small (&le;" + MIN_VARIANTS
+				output.error("Number of variants shared with reference is too small (&le;" + MIN_VARIANTS
 						+ ").\nPlease, check if input data are correct or try to use another ancestry reference panel.");
 				return false;
 			}
@@ -175,40 +177,29 @@ public class PrepareTraceCommand implements Callable<Integer> {
 			return true;
 
 		} catch (IOException e) {
-			report.error("Input Validation failed: " + e);
+			output.error("Input Validation failed: " + e);
 			e.printStackTrace();
 			return false;
 		}
 	}
 
-	protected TaskResults runTask(final CloudgeneReport report, ITask task) {
-		report.beginTask("Running " + task.getName() + "...");
+	protected TaskResults runTask(final OutputWriter report, ITask task) {
+		report.message("Running " + task.getName() + "...");
 		TaskResults results;
 		try {
-			results = task.run(new ITaskProgressListener() {
-
-				@Override
-				public void progress(String message) {
-					report.updateTask(message, CloudgeneReport.RUNNING);
-
-				}
-			});
+			results = task.run();
 
 			if (results.isSuccess()) {
-				report.endTask(task.getName(), CloudgeneReport.OK);
+				report.message(task.getName());
 			} else {
-				report.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneReport.ERROR);
+				report.error(task.getName() + "\n" + results.getMessage());
 			}
 			return results;
-		} catch (Exception | Error e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			TaskResults result = new TaskResults();
 			result.setSuccess(false);
-			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			report.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			report.endTask(e.getMessage(), CloudgeneReport.ERROR);
+			report.error("Task '" + task.getName() + " failed",  e);
 			return result;
 		}
 

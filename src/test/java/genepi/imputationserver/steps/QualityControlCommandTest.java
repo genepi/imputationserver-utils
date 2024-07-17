@@ -9,8 +9,8 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
+import genepi.imputationserver.util.OutputReader;
 import genepi.imputationserver.util.RefPanel;
-import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
 import htsjdk.samtools.util.CloseableIterator;
@@ -24,7 +24,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 	private static final String TABIX_HOME = "files/bin/tabix";
 
-	private static final String CLOUDGENE_LOG = "cloudgene.report.json";
+	private static final String CLOUDGENE_LOG = "cloudgene.report";
 
 	private static final String TEST_DATA_TMP = "test-data/tmp";
 
@@ -40,7 +40,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 185"));
 		assertTrue(log.hasInMemory("Excluded sites in total: 336"));
@@ -62,7 +62,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
 		assertTrue(log.hasInMemory("No chunks passed the QC step"));
 
@@ -81,7 +81,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 37,503"));
@@ -135,7 +135,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
@@ -273,7 +273,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("Monomorphic sites: 0"));
 
@@ -281,7 +281,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		log = new CloudgeneReport(CLOUDGENE_LOG);
+		log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("Monomorphic sites: 11"));
 
@@ -324,7 +324,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("Invalid alleles: 190"));
 
@@ -335,7 +335,6 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-mixed";
-		File tmp = new File(TEST_DATA_TMP);
 
 		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
 
@@ -343,7 +342,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("Chromosome X nonPAR region includes > 10 % mixed genotypes."));
 
 	}
@@ -360,7 +359,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("ChrX nonPAR region includes ambiguous samples"));
 
@@ -378,7 +377,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setPopulation("afr");
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Population 'afr' is not supported by reference panel 'hapmap2'."));
@@ -396,10 +395,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(log.hasInMemory("[WARN] Skip allele frequency check."));
+		assertTrue(log.hasInMemory("::warning:: Skip allele frequency check."));
 	}
 
 	@Test
@@ -414,7 +413,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
@@ -434,7 +433,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
@@ -457,7 +456,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 		
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		
 		// check statistics
 		assertTrue(log.hasInMemory("Excluded sites in total: 121,176"));
@@ -477,7 +476,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("<b>Warning:</b> 36 Chunk(s) excluded: reference overlap < 99.0%"));
@@ -496,7 +495,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
 		assertTrue(log.hasInMemory("<b>Warning:</b> 2 Chunk(s) excluded: < 1000 SNPs"));
 
@@ -514,7 +513,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(
@@ -542,7 +541,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
 		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
@@ -569,7 +568,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(0, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
 		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
 
@@ -587,7 +586,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
 		assertTrue(log.hasInMemory("Remaining sites in total: 1"));
@@ -606,7 +605,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		command.call();
 
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
 		assertTrue(log.hasInMemory("Remaining sites in total: 2"));
 

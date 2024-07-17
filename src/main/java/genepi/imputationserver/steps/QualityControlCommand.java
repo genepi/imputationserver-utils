@@ -2,28 +2,23 @@ package genepi.imputationserver.steps;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Vector;
 import java.util.concurrent.Callable;
-
-import org.apache.commons.lang.StringEscapeUtils;
-
 import genepi.imputationserver.steps.fastqc.ITask;
-import genepi.imputationserver.steps.fastqc.ITaskProgressListener;
 import genepi.imputationserver.steps.fastqc.LiftOverTask;
 import genepi.imputationserver.steps.fastqc.RangeEntry;
 import genepi.imputationserver.steps.fastqc.StatisticsTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
+import genepi.imputationserver.util.OutputWriter;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.RefPanelPopulation;
-import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
 import picocli.CommandLine.Command;
@@ -67,9 +62,9 @@ public class QualityControlCommand implements Callable<Integer> {
 	private int phasingWindow = 5000000;
 
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
-	private String report = "cloudgene.report.json";
+	private String report = null;
 
-	private CloudgeneReport context = new CloudgeneReport();
+	private OutputWriter output = null;
 
 	private RefPanel panel = null;
 
@@ -124,17 +119,17 @@ public class QualityControlCommand implements Callable<Integer> {
 	@Override
 	public Integer call() throws Exception {
 
-		context.setFilename(report);
+		if (report != null) {
+			output = new OutputWriter(report);
+		} else {
+			output = new OutputWriter();
+		}
 
 		if (panel == null) {
 			try {
 				panel = RefPanel.loadFromJson(reference);
-				if (panel == null) {
-					context.error("Reference not found.");
-					return -1;
-				}
 			} catch (Exception e) {
-				context.error("Unable to parse reference panel: " + StringEscapeUtils.escapeHtml(e.getMessage()));
+				output.error("Unable to parse reference panel:", e);
 				return -1;
 			}
 		}
@@ -158,23 +153,23 @@ public class QualityControlCommand implements Callable<Integer> {
 			excludedSnpsWriter = new LineWriter(excludedSnpsFile);
 			excludedSnpsWriter.write("#Position" + "\t" + "FilterType" + "\t" + " Info", false);
 		} catch (Exception e) {
-			context.error("Error creating file writer");
+			output.error("Error creating file writer:", e);
 			return false;
 		}
 
 		String[] vcfFilenames = files.toArray(new String[files.size()]);
 		// check if liftover is needed
 		if (!build.equals(panel.getBuild())) {
-			context.warning("Uploaded data is " + build + " and reference is " + panel.getBuild() + ".");
+			output.warning("Uploaded data is " + build + " and reference is " + panel.getBuild() + ".");
 
 			if (chainFile == null) {
-				context.error("Currently we do not support liftOver from " + build + " to " + panel.getBuild());
+				output.error("Currently we do not support liftOver from " + build + " to " + panel.getBuild());
 				return false;
 			}
 
 			String fullPathChainFile = FileUtil.path(chainFile);
 			if (!new File(fullPathChainFile).exists()) {
-				context.error("Chain file " + fullPathChainFile + " not found.");
+				output.error("Chain file " + fullPathChainFile + " not found.");
 				return false;
 			}
 
@@ -184,7 +179,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			task.setChunksDir(chunksOutput);
 			task.setExcludedSnpsWriter(excludedSnpsWriter);
 
-			TaskResults results = runTask(context, task);
+			TaskResults results = runTask(output, task);
 
 			if (results.isSuccess()) {
 				vcfFilenames = task.getNewVcfFilenames();
@@ -209,22 +204,21 @@ public class QualityControlCommand implements Callable<Integer> {
 
 		// check chromosomes
 		if (!panel.supportsPopulation(population)) {
-			StringBuilder report = new StringBuilder();
-			report.append(
-					"Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.\n");
+			List<String> report = new Vector<String>();
+			report.add("Population '" + population + "' is not supported by reference panel '" + panel.getId() + "'.");
 			if (panel.getPopulations() != null) {
-				report.append("Available populations:");
+				report.add("Available populations:");
 				for (RefPanelPopulation pop : panel.getPopulations()) {
-					report.append("\n - " + pop.getId());
+					report.add(" - " + pop.getId());
 				}
 			}
-			context.error(report.toString());
+			output.error(report);
 			return false;
 		}
 
 		int refSamples = panel.getSamplesByPopulation(population);
 		if (refSamples <= 0) {
-			context.warning("Skip allele frequency check.");
+			output.warning("Skip allele frequency check.");
 			task.setAlleleFrequencyCheck(false);
 		}
 
@@ -260,9 +254,9 @@ public class QualityControlCommand implements Callable<Integer> {
 			}
 
 			task.setRanges(rangeEntries);
-			context.log("Reference Panel Ranges: " + rangeEntries);
+			output.log("Reference Panel Ranges: " + rangeEntries);
 		} else {
-			context.log("Reference Panel Ranges: genome-wide");
+			output.log("Reference Panel Ranges: genome-wide");
 		}
 
 		task.setReferenceOverlap(referenceOverlap);
@@ -270,7 +264,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		task.setSampleCallrate(sampleCallrate);
 		task.setMixedGenotypeschrX(mixedGenotypesChrX);
 
-		TaskResults results = runTask(context, task);
+		TaskResults results = runTask(output, task);
 
 		if (!results.isSuccess()) {
 			return false;
@@ -292,61 +286,60 @@ public class QualityControlCommand implements Callable<Integer> {
 		DecimalFormat df = new DecimalFormat("#.00", symbols);
 		DecimalFormat formatter = new DecimalFormat("###,###.###", symbols);
 
-		StringBuffer text = new StringBuffer();
+		List<String> text = new Vector<String>();
 
-		text.append("<b>Statistics:</b> \n");
+		text.add("<b>Statistics:</b>");
 		if (ranges != null) {
-			text.append("Ref. Panel Range: " + ranges + "\n");
+			text.add("Ref. Panel Range: " + ranges);
 		}
-		text.append(
-				"Alternative allele frequency > 0.5 sites: " + formatter.format(task.getAlternativeAlleles()) + "\n");
-		text.append("Reference Overlap: "
+		text.add("Alternative allele frequency > 0.5 sites: " + formatter.format(task.getAlternativeAlleles()));
+		text.add("Reference Overlap: "
 				+ df.format(
 						task.getFoundInLegend() / (double) (task.getFoundInLegend() + task.getNotFoundInLegend()) * 100)
-				+ " %" + "\n");
+				+ " %");
 
-		text.append("Match: " + formatter.format(task.getMatch()) + "\n");
-		text.append("Allele switch: " + formatter.format(task.getAlleleSwitch()) + "\n");
-		text.append("Strand flip: " + formatter.format(task.getStrandFlipSimple()) + "\n");
-		text.append("Strand flip and allele switch: " + formatter.format(task.getStrandFlipAndAlleleSwitch()) + "\n");
-		text.append("A/T, C/G genotypes: " + formatter.format(task.getComplicatedGenotypes()) + "\n");
+		text.add("Match: " + formatter.format(task.getMatch()));
+		text.add("Allele switch: " + formatter.format(task.getAlleleSwitch()));
+		text.add("Strand flip: " + formatter.format(task.getStrandFlipSimple()));
+		text.add("Strand flip and allele switch: " + formatter.format(task.getStrandFlipAndAlleleSwitch()));
+		text.add("A/T, C/G genotypes: " + formatter.format(task.getComplicatedGenotypes()));
 
-		text.append("<b>Filtered sites:</b> \n");
-		text.append("Filter flag set: " + formatter.format(task.getFilterFlag()) + "\n");
-		text.append("Invalid alleles: " + formatter.format(task.getInvalidAlleles()) + "\n");
-		text.append("Multiallelic sites: " + formatter.format(task.getMultiallelicSites()) + "\n");
-		text.append("Duplicated sites: " + formatter.format(task.getDuplicates()) + "\n");
-		text.append("NonSNP sites: " + formatter.format(task.getNoSnps()) + "\n");
-		text.append("Monomorphic sites: " + formatter.format(task.getMonomorphic()) + "\n");
-		text.append("Allele mismatch: " + formatter.format(task.getAlleleMismatch()) + "\n");
-		text.append("SNPs call rate < 90%: " + formatter.format(task.getLowCallRate()));
+		text.add("<b>Filtered sites:</b>");
+		text.add("Filter flag set: " + formatter.format(task.getFilterFlag()));
+		text.add("Invalid alleles: " + formatter.format(task.getInvalidAlleles()));
+		text.add("Multiallelic sites: " + formatter.format(task.getMultiallelicSites()));
+		text.add("Duplicated sites: " + formatter.format(task.getDuplicates()));
+		text.add("NonSNP sites: " + formatter.format(task.getNoSnps()));
+		text.add("Monomorphic sites: " + formatter.format(task.getMonomorphic()));
+		text.add("Allele mismatch: " + formatter.format(task.getAlleleMismatch()));
+		text.add("SNPs call rate < 90%: " + formatter.format(task.getLowCallRate()));
 
-		context.ok(text.toString());
+		output.message(text);
 
-		text = new StringBuffer();
+		text = new Vector<String>();
 
-		text.append("Excluded sites in total: " + formatter.format(task.getFiltered()) + "\n");
-		text.append("Remaining sites in total: " + formatter.format(task.getOverallSnps()) + "\n");
+		text.add("Excluded sites in total: " + formatter.format(task.getFiltered()));
+		text.add("Remaining sites in total: " + formatter.format(task.getOverallSnps()));
 
 		if (task.getFiltered() > 0) {
-			text.append("See snps-excluded.txt for details" + "\n");
+			text.add("See snps-excluded.txt for details");
 		}
 
 		if (task.getNotFoundInLegend() > 0) {
-			text.append("Typed only sites: " + formatter.format(task.getNotFoundInLegend()) + "\n");
-			text.append("See typed-only.txt for details" + "\n");
+			text.add("Typed only sites: " + formatter.format(task.getNotFoundInLegend()));
+			text.add("See typed-only.txt for details");
 		}
 
 		if (task.getRemovedChunksSnps() > 0) {
 
-			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksSnps())
+			text.add("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksSnps())
 
 					+ " Chunk(s) excluded: < " + minSnps + " SNPs (see chunks-excluded.txt for details).");
 		}
 
 		if (task.getRemovedChunksCallRate() > 0) {
 
-			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksCallRate())
+			text.add("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksCallRate())
 
 					+ " Chunk(s) excluded: at least one sample has a call rate < " + (sampleCallrate * 100) + "% (see "
 					+ "chunks-excluded.txt for details).");
@@ -354,7 +347,7 @@ public class QualityControlCommand implements Callable<Integer> {
 
 		if (task.getRemovedChunksOverlap() > 0) {
 
-			text.append("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksOverlap())
+			text.add("\n<b>Warning:</b> " + formatter.format(task.getRemovedChunksOverlap())
 
 					+ " Chunk(s) excluded: reference overlap < " + (referenceOverlap * 100) + "% (see "
 					+ " chunks-excluded.txt for details).");
@@ -366,90 +359,81 @@ public class QualityControlCommand implements Callable<Integer> {
 		long overallChunks = task.getOverallChunks();
 
 		if (excludedChunks > 0) {
-			text.append("\nRemaining chunk(s): " + formatter.format(overallChunks - excludedChunks));
+			text.add("\nRemaining chunk(s): " + formatter.format(overallChunks - excludedChunks));
 
 		}
 
 		if (excludedChunks == overallChunks) {
 
-			text.append("\n<b>Error:</b> No chunks passed the QC step. Imputation cannot be started!");
-			context.error(text.toString());
+			text.add("\n<b>Error:</b> No chunks passed the QC step. Imputation cannot be started!");
+			output.error(text);
 
 			return false;
 
 		}
 		// strand flips (normal flip & allele switch + strand flip)
 		else if (task.getStrandFlipSimple() + task.getStrandFlipAndAlleleSwitch() > strandFlips) {
-			text.append("\n<b>Error:</b> More than " + strandFlips
+			text.add("\n<b>Error:</b> More than " + strandFlips
 					+ " obvious strand flips have been detected. Please check strand. Imputation cannot be started!");
-			context.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
 
 		// Check if too many allele switches are detected
 		else if (task.getAlleleSwitch() + task.getStrandFlipAndAlleleSwitch() > alleleSwitches) {
-			text.append("<br><b>Error:</b> More than " + alleleSwitches
+			text.add("<br><b>Error:</b> More than " + alleleSwitches
 					+ " allele switches have been detected. Imputation cannot be started!");
-			context.error(text.toString());
+			output.error(text.toString());
 
 			return false;
 		}
 
 		else if (task.isChrXMissingRate()) {
-			text.append(
+			text.add(
 					"\n<b>Error:</b> Chromosome X nonPAR region includes > 10 % mixed genotypes. Imputation cannot be started!");
-			context.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
 
 		else if (task.isChrXPloidyError()) {
-			text.append(
+			text.add(
 					"\n<b>Error:</b> ChrX nonPAR region includes ambiguous samples (haploid and diploid positions). Imputation cannot be started! See "
 							+ "chrX-info.txt");
-			context.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
 
 		else {
-
-			text.append(results.getMessage());
-			context.warning(text.toString());
+			text.add(results.getMessage());
+			
+			output.warning(text);
 			return true;
 
 		}
 	}
 
-	protected TaskResults runTask(final CloudgeneReport context2, ITask task) {
-		context2.beginTask("Running " + task.getName() + "...");
+	protected TaskResults runTask(final OutputWriter output, ITask task) {
+
 		TaskResults results;
 		try {
-			results = task.run(new ITaskProgressListener() {
-
-				@Override
-				public void progress(String message) {
-					context2.updateTask(message, CloudgeneReport.RUNNING);
-
-				}
-			});
+			results = task.run();
 
 			if (results.isSuccess()) {
-				context2.endTask(task.getName(), CloudgeneReport.OK);
+				output.message(task.getName());
 			} else {
-				context2.endTask(task.getName() + "\n" + results.getMessage(), CloudgeneReport.ERROR);
+				output.error(task.getName() + "\n" + results.getMessage());
 			}
 			return results;
-		} catch (Exception | Error e) {
+		} catch (Exception e) {
+			System.out.println("dfdfd " +e.getMessage());
 			e.printStackTrace();
 			TaskResults result = new TaskResults();
 			result.setSuccess(false);
 			result.setMessage(e.getMessage());
-			StringWriter s = new StringWriter();
-			e.printStackTrace(new PrintWriter(s));
-			context2.println("Task '" + task.getName() + "' failed.\nException:" + s.toString());
-			context2.endTask(e.getMessage(), CloudgeneReport.ERROR);
+			output.error("Task '" + task.getName(), e);
 			return result;
 		}
 

@@ -94,7 +94,7 @@ public class StatisticsTask implements ITask {
 		return "Calculating QC Statistics";
 	}
 
-	public TaskResults run(ITaskProgressListener progressListener) throws IOException, InterruptedException {
+	public TaskResults run() throws IOException, InterruptedException {
 
 		TaskResults qcObject = new TaskResults();
 
@@ -121,14 +121,7 @@ public class StatisticsTask implements ITask {
 		// chrX haploid samples
 		HashSet<String> hapSamples = new HashSet<String>();
 
-		int i = 0;
 		for (String vcfFilename : vcfFilenames) {
-
-			i++;
-			if (progressListener != null) {
-				progressListener.progress(getName() + " [" + i + "/" + vcfFilenames.length + "]\n\n" + "Analyze file "
-						+ FileUtil.getFilename(vcfFilename) + "...");
-			}
 
 			VcfFile myvcfFile = VcfFileUtil.load(vcfFilename, chunkSize, true);
 
