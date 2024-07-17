@@ -20,7 +20,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 	private static final String TABIX_HOME = "files/bin/tabix";
 
-	private static final String CLOUDGENE_LOG = "cloudgene.report.json";
+	private static final String CLOUDGENE_LOG = "cloudgene.report";
 
 	public static final boolean VERBOSE = true;
 

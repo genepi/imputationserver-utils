@@ -31,12 +31,28 @@ public class OutputWriter {
         new PrintWriter(filename).close();  // Opens and immediately closes the file, clearing its contents
     }
 
+    public void log(String message) {
+        printCommand("::log::", message);
+    }
+    
     public void message(String message) {
         printCommand("::message::", message);
     }
 
     public void message(List<String> messages) {
         printMultilineCommand("message", messages);
+    }
+    
+    public void println(String message) {
+        printCommand("::debug::", message);
+    }
+    
+    public void warning(String message) {
+        printCommand("::warning::", message);
+    }
+
+    public void warning(Exception e) {
+    	warning(StringEscapeUtils.escapeHtml(e.getMessage()));
     }
 
     public void error(String message) {
