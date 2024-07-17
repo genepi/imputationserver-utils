@@ -1,0 +1,30 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        JAVA_VERSION: ["11"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java ${{ matrix.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "${{ matrix.JAVA_VERSION }}"
+
+      - name: Build package
+        run:  mvn -B package --file pom.xml
+
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "target/imputationserver-utils.tar.gz"
+          token: ${{ secrets.GITHUB_TOKEN }}
