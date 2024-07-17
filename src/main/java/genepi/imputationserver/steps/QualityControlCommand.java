@@ -212,7 +212,7 @@ public class QualityControlCommand implements Callable<Integer> {
 					report.add(" - " + pop.getId());
 				}
 			}
-			output.error(report.toString());
+			output.error(report);
 			return false;
 		}
 
@@ -313,7 +313,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		text.add("Allele mismatch: " + formatter.format(task.getAlleleMismatch()));
 		text.add("SNPs call rate < 90%: " + formatter.format(task.getLowCallRate()));
 
-		output.message(text.toString());
+		output.message(text);
 
 		text = new Vector<String>();
 
@@ -321,12 +321,12 @@ public class QualityControlCommand implements Callable<Integer> {
 		text.add("Remaining sites in total: " + formatter.format(task.getOverallSnps()));
 
 		if (task.getFiltered() > 0) {
-			text.add("See snps-excluded.txt for details" + "\n");
+			text.add("See snps-excluded.txt for details");
 		}
 
 		if (task.getNotFoundInLegend() > 0) {
 			text.add("Typed only sites: " + formatter.format(task.getNotFoundInLegend()));
-			text.add("See typed-only.txt for details" + "\n");
+			text.add("See typed-only.txt for details");
 		}
 
 		if (task.getRemovedChunksSnps() > 0) {
@@ -365,7 +365,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		if (excludedChunks == overallChunks) {
 
 			text.add("\n<b>Error:</b> No chunks passed the QC step. Imputation cannot be started!");
-			output.error(text.toString());
+			output.error(text);
 
 			return false;
 
@@ -374,7 +374,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		else if (task.getStrandFlipSimple() + task.getStrandFlipAndAlleleSwitch() > strandFlips) {
 			text.add("\n<b>Error:</b> More than " + strandFlips
 					+ " obvious strand flips have been detected. Please check strand. Imputation cannot be started!");
-			output.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
@@ -382,7 +382,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		else if (task.isChrXMissingRate()) {
 			text.add(
 					"\n<b>Error:</b> Chromosome X nonPAR region includes > 10 % mixed genotypes. Imputation cannot be started!");
-			output.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
@@ -391,15 +391,15 @@ public class QualityControlCommand implements Callable<Integer> {
 			text.add(
 					"\n<b>Error:</b> ChrX nonPAR region includes ambiguous samples (haploid and diploid positions). Imputation cannot be started! See "
 							+ "chrX-info.txt");
-			output.error(text.toString());
+			output.error(text);
 
 			return false;
 		}
 
 		else {
-
 			text.add(results.getMessage());
-			output.warning(text.toString());
+			
+			output.warning(text);
 			return true;
 
 		}
@@ -418,6 +418,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			}
 			return results;
 		} catch (Exception e) {
+			System.out.println("dfdfd " +e.getMessage());
 			e.printStackTrace();
 			TaskResults result = new TaskResults();
 			result.setSuccess(false);

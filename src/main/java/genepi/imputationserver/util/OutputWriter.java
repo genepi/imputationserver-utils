@@ -54,6 +54,10 @@ public class OutputWriter {
     public void warning(Exception e) {
     	warning(StringEscapeUtils.escapeHtml(e.getMessage()));
     }
+    
+    public void warning(List<String> messages) {
+        printMultilineCommand("warning", messages);
+    }
 
     public void error(String message) {
         printCommand("::error::", message);
