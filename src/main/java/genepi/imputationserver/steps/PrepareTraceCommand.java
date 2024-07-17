@@ -2,20 +2,16 @@ package genepi.imputationserver.steps;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 import genepi.imputationserver.steps.ancestry.TraceInputValidation;
 import genepi.imputationserver.steps.ancestry.TraceInputValidation.TraceInputValidationResult;
 import genepi.imputationserver.steps.fastqc.ITask;
-import genepi.imputationserver.steps.fastqc.ITaskProgressListener;
 import genepi.imputationserver.steps.fastqc.LiftOverTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.OutputWriter;
-import genepi.imputationserver.util.report.CloudgeneReport;
 import genepi.io.FileUtil;
 import genepi.io.text.LineWriter;
 import htsjdk.variant.vcf.VCFFileReader;
