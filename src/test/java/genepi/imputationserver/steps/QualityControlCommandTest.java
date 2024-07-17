@@ -456,7 +456,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		command.setRefPanel(panel);
 		assertEquals(-1, (int) command.call());
 		
-		CloudgeneReport log = new CloudgeneReport(CLOUDGENE_LOG);
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		
 		// check statistics
 		assertTrue(log.hasInMemory("Excluded sites in total: 121,176"));
