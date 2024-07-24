@@ -1,13 +1,11 @@
 package genepi.imputationserver.util;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -289,35 +287,10 @@ public class RefPanel {
 
 	}
 
-	public static void resolveEnvVariable(Map<String, Object> properties, String folder) {
-		for (String key : properties.keySet()) {
-			Object value = properties.get(key);
-			if (value instanceof String) {
-				String valueString = value.toString().replaceAll("\\$\\{app_local_folder\\}", folder);
-				properties.put(key, valueString);
-			}
-		}
-	}
-
 	public static RefPanel loadFromJson(String filename) throws JsonSyntaxException, JsonIOException, IOException {
 		Gson gson = (new GsonBuilder()).create();
 		Map<String, Object> panel = gson.fromJson(new FileReader(filename), Map.class);
 		return fromProperties(panel);
-	}
-
-	public static RefPanel loadFromYamlFile(String filename, String id) throws IOException {
-
-		YamlReader reader = new YamlReader(new FileReader(filename));
-		List<Map<String, Object>> panels = reader.read(List.class);
-		for (Map<String, Object> panel : panels) {
-			if (panel.get("id").equals(id)) {
-				resolveEnvVariable(panel, (new File(filename).getParent()));
-				return fromProperties(panel);
-			}
-		}
-
-		throw new IOException("Reference panel '" + id + "' not found in file '" + filename + "'.");
-
 	}
 
 }

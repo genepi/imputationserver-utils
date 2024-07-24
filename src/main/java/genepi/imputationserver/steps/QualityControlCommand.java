@@ -76,12 +76,12 @@ public class QualityControlCommand implements Callable<Integer> {
 		this.files = files;
 	}
 
-	public void setRefPanel(RefPanel panel) {
-		this.panel = panel;
-	}
-
 	public void setChainFile(String chainFile) {
 		this.chainFile = chainFile;
+	}
+
+	public void setReference(String reference) {
+		this.reference = reference;
 	}
 
 	public void setPopulation(String population) {
@@ -125,13 +125,11 @@ public class QualityControlCommand implements Callable<Integer> {
 			output = new OutputWriter();
 		}
 
-		if (panel == null) {
-			try {
-				panel = RefPanel.loadFromJson(reference);
-			} catch (Exception e) {
-				output.error("Unable to parse reference panel:", e);
-				return -1;
-			}
+		try {
+			panel = RefPanel.loadFromJson(reference);
+		} catch (Exception e) {
+			output.error("Unable to parse reference panel:", e);
+			return -1;
 		}
 
 		if (!analyzeFiles()) {

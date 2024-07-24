@@ -74,16 +74,16 @@ public class InputValidationCommand implements Callable<Integer> {
 		this.report = report;
 	}
 
+	public void setReference(String reference) {
+		this.reference = reference;
+	}
+
 	public void setPhasing(String phasing) {
 		this.phasing = phasing;
 	}
 
 	public void setPopulation(String population) {
 		this.population = population;
-	}
-
-	public void setRefPanel(RefPanel panel) {
-		this.panel = panel;
 	}
 
 	public void setBuild(String build) {
@@ -131,13 +131,11 @@ public class InputValidationCommand implements Callable<Integer> {
 			output = new OutputWriter();
 		}
 
-		if (panel == null) {
-			try {
-				panel = RefPanel.loadFromJson(reference);
-			} catch (Exception e) {
-				output.error("Unable to parse reference panel:" ,e);
-				return -1;
-			}
+		try {
+			panel = RefPanel.loadFromJson(reference);
+		} catch (Exception e) {
+			output.error("Unable to parse reference panel:" ,e);
+			return -1;
 		}
 
 		if (!checkParameters()) {

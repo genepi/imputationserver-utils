@@ -1,0 +1,40 @@
+{
+  "id": "TOPMedfreeze6-fake",
+  "reference_build": "hg19",
+  "genotypes": "test-data/configs/hapmap-chr1/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz",
+  "legend": "test-data/configs/hapmap-chr1/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz",
+  "mapEagle": "test-data/configs/hapmap-chr1/ref-panels/genetic_map_hg19_chr1.txt",
+  "refEagle": "test-data/configs/hapmap-chr1/ref-panels/hapmap_r22.chr$chr.CEU.hg19.recode.bcf",
+  "populations": [
+    {
+      "id": "afr",
+      "name": "AFR",
+      "samples": 661
+    },
+    {
+      "id": "amr",
+      "name": "AMR",
+      "samples": 347
+    },
+    {
+      "id": "eas",
+      "name": "EAS",
+      "samples": 504
+    },
+    {
+      "id": "sas",
+      "name": "SAS",
+      "samples": 489
+    },
+    {
+      "id": "eur",
+      "name": "EUR",
+      "samples": 503
+    },
+    {
+      "id": "mixed",
+      "name": "Mixed",
+      "samples": -1
+    }
+  ]
+}
