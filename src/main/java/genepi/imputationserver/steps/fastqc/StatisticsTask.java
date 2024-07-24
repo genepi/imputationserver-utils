@@ -237,7 +237,7 @@ public class StatisticsTask implements ITask {
 			}
 
 			// load reference snp
-			LegendEntry refSnp = legendReader.findByPosition(snp.getStart());
+			LegendEntry refSnp = legendReader.findByPosition(myvcfFile.getChromosome(), snp.getStart());
 
 			for (VcfChunk openChunk : chunks.values()) {
 				if (snp.getStart() <= openChunk.getEnd() + phasingWindow) {
@@ -790,27 +790,19 @@ public class StatisticsTask implements ITask {
 		}
 	}
 
-	private LegendFileReader getReader(String _chromosome) throws IOException, InterruptedException {
-
+	private LegendFileReader getReader(String _chromosome) throws IOException {
 		// one file for all chrX legends
 		if (VcfFileUtil.isChrX(_chromosome)) {
 			_chromosome = "X";
 		}
-
 		String legendFile_ = legendFile.replaceAll("\\$chr", _chromosome);
 		String myLegendFile = FileUtil.path(legendFile_);
 		if (!new File(myLegendFile).exists()) {
 
-			throw new InterruptedException("This reference panel doesn't support chromosome " + _chromosome + ". File " + myLegendFile + " not found.");
+			throw new IOException("This reference panel doesn't support chromosome " + _chromosome + ". File " + myLegendFile + " not found.");
 
 		}
-
-		LegendFileReader legendReader = new LegendFileReader(myLegendFile, population);
-		legendReader.createIndex();
-		legendReader.initSearch();
-
-		return legendReader;
-
+		return new LegendFileReader(myLegendFile, population);
 	}
 
 	public void setMafFile(String mafFile) {

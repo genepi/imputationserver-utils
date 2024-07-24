@@ -497,6 +497,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
+		log.view();
 		assertTrue(log.hasInMemory("<b>Warning:</b> 2 Chunk(s) excluded: < 1000 SNPs"));
 
 	}
