@@ -16,7 +16,6 @@ import genepi.io.text.LineReader;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
-import net.lingala.zip4j.exception.ZipException;
 
 public class QualityControlCommandTest extends AbstractTestcase {
 
@@ -288,7 +287,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXSplits() throws Exception, ZipException {
+	public void testChrXSplits() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";
@@ -312,7 +311,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXInvalidAlleles() throws Exception, ZipException {
+	public void testChrXInvalidAlleles() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-phased-invalid";
@@ -331,7 +330,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXMixedGenotypes() throws Exception, ZipException {
+	public void testChrXMixedGenotypes() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-mixed";
@@ -348,7 +347,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXPloidyError() throws Exception, ZipException {
+	public void testChrXPloidyError() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-ploidy";
@@ -523,7 +522,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChr23PipelineLifting() throws Exception, ZipException {
+	public void testChr23PipelineLifting() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chr23-unphased";
@@ -550,7 +549,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXPipelineLifting() throws Exception, ZipException {
+	public void testChrXPipelineLifting() throws Exception {
 
 		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";

@@ -1,6 +1,6 @@
 package genepi.imputationserver.util;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -52,7 +52,7 @@ public class OutputWriter {
     }
 
     public void warning(Exception e) {
-    	warning(StringEscapeUtils.escapeHtml(e.getMessage()));
+    	warning(StringEscapeUtils.escapeHtml4(e.getMessage()));
     }
     
     public void warning(List<String> messages) {
@@ -64,11 +64,11 @@ public class OutputWriter {
     }
 
     public void error(Exception e) {
-        error(StringEscapeUtils.escapeHtml(e.getMessage()));
+        error(StringEscapeUtils.escapeHtml4(e.getMessage()));
     }
 
     public void error(String message, Exception e) {
-        error(message +  " " + StringEscapeUtils.escapeHtml(e.getMessage()));
+        error(message +  " " + StringEscapeUtils.escapeHtml4(e.getMessage()));
     }
 
     public void error(List<String> messages) {

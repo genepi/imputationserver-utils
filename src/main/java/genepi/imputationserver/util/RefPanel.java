@@ -320,10 +320,4 @@ public class RefPanel {
 
 	}
 
-	public static RefPanel loadFromYamlFile(String filename) throws IOException {
-		YamlReader reader = new YamlReader(new FileReader(filename));
-		Map<String, Object> panel = reader.read(Map.class);
-		return fromProperties(panel);
-	}
-
 }
