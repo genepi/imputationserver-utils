@@ -265,11 +265,9 @@ public class InputValidationCommand implements Callable<Integer> {
 		// init counters
 		output.print("");
 		output.setCounter("samples", noSamples);
-		output.setCounter("genotypes", noSamples * noSnps);
+		output.setCounter("variants",  noSnps);
 		output.setCounter("chromosomes", noSamples * chromosomes.size());
 		output.setCounter("runs", 1);
-		output.setCounter("refpanel_" + panel.getId(), 1);
-		output.setCounter("phasing_" + "eagle", 1); //phasing?
 		return true;
 
 	}
