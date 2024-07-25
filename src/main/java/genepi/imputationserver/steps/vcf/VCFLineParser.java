@@ -46,6 +46,7 @@ public class VCFLineParser {
 
 		String chromosome = tiles[0];
 		int position = Integer.parseInt(tiles[1]);
+		String id = tiles[2];
 		String ref = tiles[3];
 		String alt = tiles[4];
 
@@ -124,6 +125,7 @@ public class VCFLineParser {
 		}
 
 		// update variant context
+		variantContext.setId(id);
 		variantContext.setContig(chromosome);
 		variantContext.setStart(position);
 		variantContext.setReferenceAllele(ref);

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
+import genepi.imputationserver.steps.fastqc.io.*;
 import genepi.imputationserver.steps.fastqc.legend.SitesEntry;
 import genepi.imputationserver.steps.fastqc.legend.SitesFileReader;
 import genepi.imputationserver.steps.vcf.BGzipLineWriter;
@@ -19,8 +20,8 @@ import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.GenomicTools;
 import genepi.imputationserver.util.StringUtils;
 import genepi.io.FileUtil;
-import genepi.io.text.LineReader;
 import genepi.io.text.LineWriter;
+import genepi.io.text.LineReader;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
@@ -58,7 +59,6 @@ public class StatisticsTask implements ITask {
 	private int chunkSize;
 	private int phasingWindow;
 	private String[] vcfFilenames;
-	private LineWriter excludedSnpsWriter;
 
 	private HashSet<RangeEntry> ranges;
 
@@ -91,6 +91,17 @@ public class StatisticsTask implements ITask {
 	private int removedChunksOverlap;
 	private int removedChunksCallRate;
 
+
+	private SnpMafWriter mafWriter;
+
+	private TypedOnlySnpsWriter typedOnlyWriter;
+
+	private ExcludedSnpsWriter excludedSnpsWriter;
+
+	private ExcludedChunksWriter excludedChunkWriter;
+
+	private ChrXInfoWriter chrXInfoWriter;
+
 	@Override
 	public String getName() {
 		return "Calculating QC Statistics";
@@ -103,22 +114,22 @@ public class StatisticsTask implements ITask {
 		qcObject.setMessage("");
 
 		// MAF file for QC report
-		LineWriter mafWriter = new LineWriter(mafFile);
+
+		mafWriter = new SnpMafWriter(mafFile);
+
+		String excludedSnpsFile = FileUtil.path(statDir, "snps-excluded.txt");
+		excludedSnpsWriter = new ExcludedSnpsWriter(excludedSnpsFile);
+
 
 		// excluded chunks
 		String excludedChunkFile = FileUtil.path(statDir, "chunks-excluded.txt");
-		LineWriter excludedChunkWriter = new LineWriter(excludedChunkFile);
-		excludedChunkWriter.write(
-				"#Chunk" + "\t" + "SNPs (#)" + "\t" + "Reference Overlap (%)" + "\t" + "Low Sample Call Rates (#)",
-				false);
+		 excludedChunkWriter = new ExcludedChunksWriter(excludedChunkFile);
 
 		String chrXInfoFile = FileUtil.path(statDir, "chrX-info.txt");
-		LineWriter chrXInfoWriter = new LineWriter(chrXInfoFile);
-		chrXInfoWriter.write("#Sample\tPosition", false);
+		chrXInfoWriter = new ChrXInfoWriter(chrXInfoFile);
 
-		String typedOnleFile = FileUtil.path(statDir, "typed-only.txt");
-		LineWriter typedOnlyWriter = new LineWriter(typedOnleFile);
-		typedOnlyWriter.write("#Position", false);
+		String typedOnlyFile = FileUtil.path(statDir, "snps-typed-only.txt");
+		typedOnlyWriter = new TypedOnlySnpsWriter(typedOnlyFile);
 
 		// chrX haploid samples
 		HashSet<String> hapSamples = new HashSet<String>();
@@ -136,8 +147,7 @@ public class StatisticsTask implements ITask {
 			if (VcfFileUtil.isChrX(chromosome)) {
 
 				// split to PAR1, PAR2 and nonPAR
-				List<String> splits = prepareChrX(myvcfFile.getVcfFilename(), myvcfFile.isPhased(), chrXInfoWriter,
-						hapSamples);
+				List<String> splits = prepareChrX(myvcfFile.getVcfFilename(), myvcfFile.isPhased(), hapSamples);
 
 				for (String split : splits) {
 					VcfFile _myvcfFile = VcfFileUtil.load(split, chunkSize, true);
@@ -145,34 +155,20 @@ public class StatisticsTask implements ITask {
 					_myvcfFile.setChrX(true);
 
 					// chrX
-					processFile(_myvcfFile, mafWriter, excludedSnpsWriter, excludedChunkWriter, typedOnlyWriter);
+					processFile(_myvcfFile);
 				}
 			} else {
 				// chr1-22
-				processFile(myvcfFile, mafWriter, excludedSnpsWriter, excludedChunkWriter, typedOnlyWriter);
+				processFile(myvcfFile);
 
 			}
 		}
 
 		mafWriter.close();
-
 		excludedChunkWriter.close();
-
 		chrXInfoWriter.close();
-
 		typedOnlyWriter.close();
-
-		if (!excludedChunkWriter.hasData()) {
-			FileUtil.deleteFile(excludedChunkFile);
-		}
-
-		if (!chrXInfoWriter.hasData()) {
-			FileUtil.deleteFile(chrXInfoFile);
-		}
-
-		if (!typedOnlyWriter.hasData()) {
-			FileUtil.deleteFile(typedOnleFile);
-		}
+		excludedSnpsWriter.close();
 
 		qcObject.setSuccess(true);
 
@@ -180,8 +176,7 @@ public class StatisticsTask implements ITask {
 
 	}
 
-	public void processFile(VcfFile myvcfFile, LineWriter mafWriter, LineWriter excludedSnpsWriter,
-			LineWriter excludedChunkWriter, LineWriter typedOnlyWriter) throws IOException, InterruptedException {
+	public void processFile(VcfFile myvcfFile) throws IOException, InterruptedException {
 
 		Map<Integer, VcfChunk> chunks = new ConcurrentHashMap<Integer, VcfChunk>();
 
@@ -243,12 +238,11 @@ public class StatisticsTask implements ITask {
 
 			for (VcfChunk openChunk : chunks.values()) {
 				if (snp.getStart() <= openChunk.getEnd() + phasingWindow) {
-					processLine(snp, refSnp, samples, openChunk.vcfChunkWriter, openChunk, mafWriter,
-							excludedSnpsWriter, typedOnlyWriter);
+					processLine(snp, refSnp, samples, openChunk.vcfChunkWriter, openChunk);
 				} else {
 					// close open chunks
 					openChunk.vcfChunkWriter.close();
-					chunkSummary(openChunk, metafileWriter, excludedChunkWriter);
+					chunkSummary(openChunk, metafileWriter);
 					chunks.values().remove(openChunk);
 				}
 			}
@@ -262,7 +256,7 @@ public class StatisticsTask implements ITask {
 			openChunk.vcfChunkWriter.close();
 			if (openChunk.lastPos >= openChunk.getStart()) {
 				// System.out.println("Chunks " + open);
-				chunkSummary(openChunk, metafileWriter, excludedChunkWriter);
+				chunkSummary(openChunk, metafileWriter);
 			} else {
 				new File(openChunk.getVcfFilename()).delete();
 				overallChunks--;
@@ -310,7 +304,7 @@ public class StatisticsTask implements ITask {
 	}
 
 	private void processLine(MinimalVariantContext snp, SitesEntry refSnp, int samples, BGzipLineWriter vcfWriter,
-							 VcfChunk chunk, LineWriter mafWriter, LineWriter excludedSnpsWriter, LineWriter typedOnlyWriter)
+							 VcfChunk chunk)
 			throws IOException, InterruptedException {
 
 		if (ranges != null) {
@@ -340,7 +334,7 @@ public class StatisticsTask implements ITask {
 
 		if (snp.getAlternateAllele().contains(",")) {
 			if (insideChunk) {
-				excludedSnpsWriter.write(snp + "\t" + "Multiallelic Site");
+				excludedSnpsWriter.write(snp, "Multiallelic Site");
 				multiallelicSites++;
 				filtered++;
 			}
@@ -352,7 +346,7 @@ public class StatisticsTask implements ITask {
 		// filter invalid alleles
 		if (!GenomicTools.isValid(ref) || !GenomicTools.isValid(alt)) {
 			if (insideChunk) {
-				excludedSnpsWriter.write(snp + "\t" + "Invalid Alleles");
+				excludedSnpsWriter.write(snp, "Invalid Alleles");
 				invalidAlleles++;
 				filtered++;
 			}
@@ -365,7 +359,7 @@ public class StatisticsTask implements ITask {
 
 			if (insideChunk) {
 				duplicates++;
-				excludedSnpsWriter.write(snp + "\t" + "Duplicate");
+				excludedSnpsWriter.write(snp, "Duplicate");
 				filtered++;
 			}
 
@@ -386,10 +380,10 @@ public class StatisticsTask implements ITask {
 				filtered++;
 				if (snp.getFilters().contains("DUP")) {
 					duplicates++;
-					excludedSnpsWriter.write(snp + "\t" + "Filter Duplicate");
+					excludedSnpsWriter.write(snp, "Filter Duplicate");
 				} else {
 					filterFlag++;
-					excludedSnpsWriter.write(snp + "\t" + "Filter Other");
+					excludedSnpsWriter.write(snp, "Filter Other");
 				}
 			}
 			return;
@@ -409,7 +403,7 @@ public class StatisticsTask implements ITask {
 		// filter indels
 		if (snp.isIndel() || snp.isComplexIndel()) {
 			if (insideChunk) {
-				excludedSnpsWriter.write(snp + "\t" + "InDel");
+				excludedSnpsWriter.write(snp, "InDel");
 				noSnps++;
 				filtered++;
 			}
@@ -419,7 +413,7 @@ public class StatisticsTask implements ITask {
 		// monomorphic only excludes 0/0;
 		if (samples > 1 && snp.isMonomorphicInSamples()) {
 			if (insideChunk) {
-				excludedSnpsWriter.write(snp + "\t" + "Monomorphic");
+				excludedSnpsWriter.write(snp, "Monomorphic");
 				monomorphic++;
 				filtered++;
 			}
@@ -431,11 +425,10 @@ public class StatisticsTask implements ITask {
 		if (refSnp == null) {
 
 			if (insideChunk) {
-
 				notFoundInLegend++;
 				chunk.notFoundInLegendChunk++;
 				vcfWriter.write(snp.getRawLine());
-				typedOnlyWriter.write(snp.toString());
+				typedOnlyWriter.write(snp);
 			}
 
 		} else {
@@ -477,7 +470,7 @@ public class StatisticsTask implements ITask {
 
 					alleleSwitch++;
 					filtered++;
-					excludedSnpsWriter.write(snp + "\t" + "Allele switch" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
+					excludedSnpsWriter.write(snp, "Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
 					
 				}
 				return;
@@ -491,7 +484,7 @@ public class StatisticsTask implements ITask {
 
 					strandFlipSimple++;
 					filtered++;
-					excludedSnpsWriter.write(snp + "\t" + "Strand flip" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
+					excludedSnpsWriter.write(snp, "Strand flip. Reference Panel: " + legendRef + "/" + legendAlt);
 
 				}
 				return;
@@ -504,8 +497,7 @@ public class StatisticsTask implements ITask {
 
 					filtered++;
 					strandFlipAndAlleleSwitch++;
-					excludedSnpsWriter.write(
-							snp + "\t" + "Strand flip and Allele switch" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
+					excludedSnpsWriter.write(snp, "Strand flip and Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
 
 				}
 
@@ -519,8 +511,7 @@ public class StatisticsTask implements ITask {
 				if (insideChunk) {
 					alleleMismatch++;
 					filtered++;
-					excludedSnpsWriter
-							.write(snp + "\t" + "Allele mismatch" + "\t" + "Ref:" + legendRef + "/" + legendAlt);
+					excludedSnpsWriter.write(snp, "Allele mismatch. Reference Panel: " + legendRef + "/" + legendAlt);
 				}
 				return;
 			}
@@ -530,8 +521,7 @@ public class StatisticsTask implements ITask {
 				if (insideChunk) {
 					lowCallRate++;
 					filtered++;
-					excludedSnpsWriter.write(snp + "\t" + "Low call rate" + "\t" + "Value: "
-							+ (1.0 - snp.getNoCallCount() / (double) snp.getNSamples()));
+					excludedSnpsWriter.write(snp , "Low call rate. Value: " + (1.0 - snp.getNoCallCount() / (double) snp.getNSamples()));
 				}
 				return;
 			}
@@ -541,7 +531,7 @@ public class StatisticsTask implements ITask {
 				// allele-frequency check
 				if (alleleFrequencyCheck && refSnp.hasFrequencies()) {
 					SnpStats statistics = GenomicTools.calculateAlleleFreq(snp, refSnp, refSamples);
-					mafWriter.write(snp + "\t" + statistics.toString());
+					mafWriter.write(snp, statistics);
 				}
 				overallSnps++;
 				chunk.overallSnpsChunk++;
@@ -568,8 +558,7 @@ public class StatisticsTask implements ITask {
 		}
 	}
 
-	private void chunkSummary(VcfChunk chunk, LineWriter metafileWriter, LineWriter excludedChunkWriter)
-			throws IOException {
+	private void chunkSummary(VcfChunk chunk, LineWriter metafileWriter) throws IOException {
 
 		// this checks if enough SNPs are included in each sample
 		boolean lowSampleCallRate = false;
@@ -604,8 +593,7 @@ public class StatisticsTask implements ITask {
 
 		} else {
 
-			excludedChunkWriter
-					.write(chunk.toString() + "\t" + chunk.overallSnpsChunk + "\t" + overlap + "\t" + countLowSamples);
+			excludedChunkWriter.write(chunk,  overlap, countLowSamples);
 
 			if (overlap < referenceOverlap) {
 				removedChunksOverlap++;
@@ -619,8 +607,7 @@ public class StatisticsTask implements ITask {
 
 	}
 
-	public List<String> prepareChrX(String filename, boolean phased, LineWriter chrXInfoWriter,
-			HashSet<String> hapSamples) throws IOException {
+	public List<String> prepareChrX(String filename, boolean phased, HashSet<String> hapSamples) throws IOException {
 
 		List<String> paths = new Vector<String>();
 		String nonPar = FileUtil.path(chunksDir, X_NON_PAR + ".vcf.gz");
@@ -672,7 +659,13 @@ public class StatisticsTask implements ITask {
 
 				// filter invalid alleles
 				if (!GenomicTools.isValid(ref) || !GenomicTools.isValid(alt)) {
-					excludedSnpsWriter.write(tiles[0] + ":" + tiles[1] + ":" + ref + ":" + alt);
+					MinimalVariantContext variantContext = new MinimalVariantContext(1);
+					variantContext.setId(tiles[2]);
+					variantContext.setContig(tiles[0]);
+					variantContext.setStart(Integer.parseInt(tiles[1]));
+					variantContext.setReferenceAllele(ref);
+					variantContext.setAlternateAllele(alt);
+					excludedSnpsWriter.write(variantContext, "Invalid Alleles");
 					invalidAlleles++;
 					filtered++;
 					continue;
@@ -703,7 +696,7 @@ public class StatisticsTask implements ITask {
 
 					count++;
 
-					checkPloidy(header.getGenotypeSamples(), line, phased, chrXInfoWriter, hapSamples);
+					checkPloidy(header.getGenotypeSamples(), line, phased, hapSamples);
 
 					mixedGenotypes = checkMixedGenotypes(mixedGenotypes, line);
 
@@ -772,7 +765,7 @@ public class StatisticsTask implements ITask {
 		return mixedGenotypes;
 	}
 
-	public void checkPloidy(List<String> samples, VariantContext snp, boolean isPhased, LineWriter chrXInfoWriter,
+	public void checkPloidy(List<String> samples, VariantContext snp, boolean isPhased,
 			HashSet<String> hapSamples) throws IOException {
 
 		for (final String name : samples) {
@@ -780,7 +773,7 @@ public class StatisticsTask implements ITask {
 			Genotype genotype = snp.getGenotype(name);
 
 			if (hapSamples.contains(name) && genotype.getPloidy() != 1) {
-				chrXInfoWriter.write(name + "\t" + snp.getContig() + ":" + snp.getStart());
+				chrXInfoWriter.write(name, snp.getContig() + ":" + snp.getStart());
 				this.chrXPloidyError = true;
 
 			}
@@ -846,7 +839,7 @@ public class StatisticsTask implements ITask {
 		this.vcfFilenames = vcfFilenames;
 	}
 
-	public void setExcludedSnpsWriter(LineWriter excludedSnpsWriter) {
+	public void setExcludedSnpsWriter(ExcludedSnpsWriter excludedSnpsWriter) {
 		this.excludedSnpsWriter = excludedSnpsWriter;
 	}
 

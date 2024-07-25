@@ -33,6 +33,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		String inputFolder = "test-data/data/single";
 
 		QualityControlCommand command = buildCommand(inputFolder);
+		command.setPopulation("eur");
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		assertEquals(-1, (int) command.call());
 
@@ -44,6 +45,19 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		assertTrue(log.hasInMemory("Monomorphic sites: 331"));
 
 	}
+
+	/*@Test
+	public void testQcStatisticsAndLifting() throws Exception {
+
+		String inputFolder = "test-data/data/chr20-phased-hg38";
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setPopulation("eur");
+		command.setReference("test-data/configs/hapmap-chr20/hapmap2.json");
+		command.setChainFile("test-data/configs/hapmap-chr20/hg38ToHg19.over.chain.gz");
+		assertEquals(0, (int) command.call());
+
+	}*/
 
 	@Test
 	public void testQcStatisticAllChunksExcluded() throws Exception {

@@ -93,7 +93,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 				task.setVcfFilenames(files);
 				task.setChainFile(fullPathChainFile);
 				task.setChunksDir(chunksDir);
-				task.setExcludedSnpsWriter(null);
+				task.setStatDir(output);
 
 				TaskResults results = runTask(outputWriter, task);
 

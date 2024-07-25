@@ -3,6 +3,7 @@ package genepi.imputationserver.steps.fastqc;
 import java.io.IOException;
 import java.util.Vector;
 
+import genepi.imputationserver.steps.fastqc.io.ExcludedSnpsWriter;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.steps.vcf.VcfLiftOverFast;
 import genepi.io.FileUtil;
@@ -19,7 +20,8 @@ public class LiftOverTask implements ITask {
 	private String chunksDir;
 	private String[] vcfFilenames;
 	private String[] newVcfFilenames;
-	private LineWriter excludedSnpsWriter;
+
+	private String statDir;
 
 	@Override
 	public String getName() {
@@ -27,6 +29,9 @@ public class LiftOverTask implements ITask {
 	}
 
 	public TaskResults run() throws IOException {
+
+		String excludedSnpsFile = FileUtil.path(statDir, "lift-over.txt");
+		LineWriter excludedSnpsWriter = new LineWriter(excludedSnpsFile);
 
 		newVcfFilenames = new String[vcfFilenames.length];
 		for (int i = 0; i < vcfFilenames.length; i++) {
@@ -51,16 +56,14 @@ public class LiftOverTask implements ITask {
 		result.setMessage("");
 		result.setSuccess(true);
 
+		excludedSnpsWriter.close();
+
 		return result;
 
 	}
 
 	public void setVcfFilenames(String[] vcfFilenames) {
 		this.vcfFilenames = vcfFilenames;
-	}
-
-	public void setExcludedSnpsWriter(LineWriter excludedSnpsWriter) {
-		this.excludedSnpsWriter = excludedSnpsWriter;
 	}
 
 	public void setChunksDir(String chunksDir) {
@@ -75,4 +78,7 @@ public class LiftOverTask implements ITask {
 		return newVcfFilenames;
 	}
 
+	public void setStatDir(String statDir) {
+		this.statDir = statDir;
+	}
 }
