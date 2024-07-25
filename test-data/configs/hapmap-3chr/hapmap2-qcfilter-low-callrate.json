@@ -2,7 +2,7 @@
   "id": "hapmap2-qcfilter-low-callrate",
   "reference_build": "hg19",
   "genotypes": "test-data/configs/hapmap-3chr/ref-panels/hapmap_r22.chr$chr.CEU.hg19.m3vcf.gz",
-  "legend": "test-data/configs/hapmap-3chr/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz",
+  "sites": "test-data/configs/hapmap-3chr/ref-panels/hapmap_r22.chr$chr.CEU.hg19_impute.legend.gz",
   "mapEagle": "test-data/configs/hapmap-3chr/ref-panels/genetic_map_hg19_chr1.txt",
   "refEagle": "test-data/configs/hapmap-3chr/ref-panels/hapmap_r22.eagle/hapmap_r22.chr$chr.CEU.hg19.recode.bcf",
   "populations": [

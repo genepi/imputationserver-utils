@@ -24,7 +24,7 @@ public class RefPanel {
 
 	private String genotypes;
 
-	private String legend;
+	private String sites;
 
 	private String mapMinimac;
 
@@ -75,12 +75,12 @@ public class RefPanel {
 		this.genotypes = genotypes;
 	}
 
-	public String getLegend() {
-		return legend;
+	public String getSites() {
+		return sites;
 	}
 
-	public void setLegend(String legend) {
-		this.legend = legend;
+	public void setSites(String sites) {
+		this.sites = sites;
 	}
 
 	public void setBuild(String build) {
@@ -209,7 +209,7 @@ public class RefPanel {
 		this.mapBeagle = mapBeagle;
 	}
 
-	public static RefPanel fromProperties(Object properties) throws IOException {
+	private static RefPanel fromProperties(Object properties) throws IOException {
 
 		if (properties == null) {
 			throw new IOException("Propertie map not set.");
@@ -221,19 +221,19 @@ public class RefPanel {
 		if (map.get("genotypes") != null) {
 			panel.setGenotypes(map.get("genotypes").toString());
 		} else {
-			throw new IOException("Property 'genotypes' not found in cloudgene.yaml.");
+			throw new IOException("Property 'genotypes' not found in json file.");
 		}
 
 		if (map.get("id") != null) {
 			panel.setId(map.get("id").toString());
 		} else {
-			throw new IOException("Property 'id' not found in cloudgene.yaml.");
+			throw new IOException("Property 'id' not found in json file.");
 		}
 
-		if (map.get("legend") != null) {
-			panel.setLegend(map.get("legend").toString());
+		if (map.get("sites") != null) {
+			panel.setSites(map.get("sites").toString());
 		} else {
-			throw new IOException("Property 'legend' not found in cloudgene.yaml.");
+			throw new IOException("Property 'sites' not found in json file.");
 		}
 
 		if (map.get("mapEagle") != null) {
@@ -255,7 +255,7 @@ public class RefPanel {
 		if (map.get("populations") != null) {
 			panel.setPopulations(RefPanelPopulation.fromProperties((List<Map<String, Object>>) map.get("populations")));
 		} else {
-			throw new IOException("Property 'populations' not found in cloudgene.yaml.");
+			throw new IOException("Property 'populations' not found in json file.");
 		}
 
 		if (map.get("qcFilter") != null) {

@@ -3,7 +3,7 @@ package genepi.imputationserver.util;
 import java.io.IOException;
 
 import genepi.imputationserver.steps.fastqc.SnpStats;
-import genepi.imputationserver.steps.fastqc.legend.LegendEntry;
+import genepi.imputationserver.steps.fastqc.legend.SitesEntry;
 import genepi.imputationserver.steps.vcf.MinimalVariantContext;
 
 public class GenomicTools {
@@ -30,12 +30,12 @@ public class GenomicTools {
 				|| allele.toUpperCase().equals(T);
 	}
 
-	public static boolean match(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean match(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		char studyRef = snp.getReferenceAllele().charAt(0);
 		char studyAlt = snp.getAlternateAllele().charAt(0);
-		char legendRef = refEntry.getAlleleA();
-		char legendAlt = refEntry.getAlleleB();
+		char legendRef = refEntry.getRefAllele();
+		char legendAlt = refEntry.getAltAllele();
 
 		if (studyRef == legendRef && studyAlt == legendAlt) {
 
@@ -46,13 +46,13 @@ public class GenomicTools {
 		return false;
 	}
 
-	public static boolean alleleSwitch(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean alleleSwitch(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		char studyRef = snp.getReferenceAllele().charAt(0);
 		char studyAlt = snp.getAlternateAllele().charAt(0);
 
-		char legendRef = refEntry.getAlleleA();
-		char legendAlt = refEntry.getAlleleB();
+		char legendRef = refEntry.getRefAllele();
+		char legendAlt = refEntry.getAltAllele();
 
 		// all simple cases
 		if (studyRef == legendAlt && studyAlt == legendRef) {
@@ -64,7 +64,7 @@ public class GenomicTools {
 
 	}
 
-	public static boolean strandFlip(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean strandFlip(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		String studyGenotype = snp.getGenotype();
 		String referenceGenotype = refEntry.getGenotype();
@@ -107,7 +107,7 @@ public class GenomicTools {
 
 	}
 
-	public static boolean complicatedGenotypes(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean complicatedGenotypes(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		String studyGenotype = snp.getGenotype();
 		String referenceGenotype = refEntry.getGenotype();
@@ -126,7 +126,7 @@ public class GenomicTools {
 		return false;
 	}
 
-	public static boolean strandFlipAndAlleleSwitch(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean strandFlipAndAlleleSwitch(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		String studyGenotype = snp.getGenotype();
 		String referenceGenotype = refEntry.getGenotype();
@@ -169,8 +169,8 @@ public class GenomicTools {
 
 	}
 
-	public static ChiSquareObject chiSquare(MinimalVariantContext snp, LegendEntry refSnp, boolean strandSwap,
-			int size) {
+	public static ChiSquareObject chiSquare(MinimalVariantContext snp, SitesEntry refSnp, boolean strandSwap,
+											int size) {
 
 		// calculate allele frequency
 
@@ -178,8 +178,8 @@ public class GenomicTools {
 
 		int refN = size;
 
-		double refA = refSnp.getFrequencyA();
-		double refB = refSnp.getFrequencyB();
+		double refA = refSnp.getRefFrequency();
+		double refB = refSnp.getAltFrequency();
 
 		int majorAlleleCount;
 		int minorAlleleCount;
@@ -215,18 +215,18 @@ public class GenomicTools {
 		return new ChiSquareObject(chisq, p, q);
 	}
 
-	public static boolean alleleMismatch(MinimalVariantContext snp, LegendEntry refEntry) {
+	public static boolean alleleMismatch(MinimalVariantContext snp, SitesEntry refEntry) {
 
 		char studyRef = snp.getReferenceAllele().charAt(0);
 		char studyAlt = snp.getAlternateAllele().charAt(0);
-		char legendRef = refEntry.getAlleleA();
-		char legendAlt = refEntry.getAlleleB();
+		char legendRef = refEntry.getRefAllele();
+		char legendAlt = refEntry.getAltAllele();
 
 		return studyRef != legendRef || studyAlt != legendAlt;
 
 	}
 
-	public static SnpStats calculateAlleleFreq(MinimalVariantContext snp, LegendEntry refSnp, int size)
+	public static SnpStats calculateAlleleFreq(MinimalVariantContext snp, SitesEntry refSnp, int size)
 			throws IOException, InterruptedException {
 
 		boolean strandSwap = GenomicTools.strandFlipAndAlleleSwitch(snp, refSnp)
@@ -253,15 +253,15 @@ public class GenomicTools {
 		output.setType("SNP");
 		output.setPosition(position);
 		output.setChromosome(snp.getContig());
-		output.setRefFrequencyA(refSnp.getFrequencyA());
-		output.setRefFrequencyB(refSnp.getFrequencyB());
+		output.setRefFrequencyA(refSnp.getRefFrequency());
+		output.setRefFrequencyB(refSnp.getAltFrequency());
 		output.setFrequencyA((float) chiObj.getP());
 		output.setFrequencyB((float) chiObj.getQ());
 		output.setChisq(chiObj.getChisq());
 		output.setAlleleA(majorAllele);
 		output.setAlleleB(minorAllele);
-		output.setRefAlleleA(refSnp.getAlleleA());
-		output.setRefAlleleB(refSnp.getAlleleB());
+		output.setRefAlleleA(refSnp.getRefAllele());
+		output.setRefAlleleB(refSnp.getAltAllele());
 		output.setOverlapWithReference(true);
 
 		return output;

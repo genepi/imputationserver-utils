@@ -2,7 +2,7 @@
   "id": "phase1",
   "reference_build": "hg19",
   "genotypes": "test-data/configs/hapmap-chrX/ref-panels/$chr.1000g.Phase1.v3.With.Parameter.Estimates.m3vcf.gz",
-  "legend": "test-data/configs/hapmap-chrX/ref-panels/1000g_chr$chr_impute.legend.gz",
+  "sites": "test-data/configs/hapmap-chrX/ref-panels/1000g_chr$chr_impute.legend.gz",
   "mapEagle": "test-data/configs/hapmap-chrX/ref-panels/genetic_map_hg19_withX.txt.gz",
   "refEagle": "test-data/configs/hapmap-chrX/ref-panels/ALL.chr$chr.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.bcf",
   "populations": [
