@@ -61,7 +61,6 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setPopulation("eur");
 		command.setBuild("hg38");
-		//set the following file in hapmap2: hapmap_r22.chr20.CEU.hg38_impute.legend.gz
 		command.setReference("test-data/configs/hapmap-chr20-hg38/hapmap2.json");
 		command.call();
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
