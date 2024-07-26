@@ -130,7 +130,7 @@ public class VcfFileUtil {
 
 				try {
 					createIndex(vcfFilename);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					throw new IOException(
 							"The provided VCF file is malformed. Error during index creation: " + e.getMessage());
 				}

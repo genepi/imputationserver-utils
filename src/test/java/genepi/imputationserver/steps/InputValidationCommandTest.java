@@ -154,7 +154,6 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testUnorderedVcfFile() throws Exception {
 
-		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/unorderd";
 
 		InputValidationCommand command = buildCommand(inputFolder);
@@ -164,6 +163,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
 		assertTrue(log.hasInMemory("::error:: The provided VCF file is malformed"));
 		assertTrue(log.hasInMemory("Error during index creation"));
 
