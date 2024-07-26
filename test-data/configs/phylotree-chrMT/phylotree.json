@@ -1,0 +1,14 @@
+{
+  "id": "phylotree",
+  "reference_build": "hg19",
+  "genotypes": "test-data/configs/phylotree-chrMT/ref-panels/chr$chr.phylotree17.m3vcf.gz",
+  "sites": "test-data/configs/phylotree-chrMT/ref-panels/chrMT.phylotree17.legend.gz",
+  "mapEagle": "test-data/configs/phylotree-chrMT/ref-panels/genetic_map_hg19_withX.txt.gz",
+  "populations": [
+    {
+      "id": "eur",
+      "name": "EUR",
+      "samples": 2533
+    }
+  ]
+}

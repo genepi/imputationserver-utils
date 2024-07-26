@@ -27,13 +27,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testHg19DataWithBuild38() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/three";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setBuild("hg38");
 
 		assertEquals(-1, (int) command.call());
@@ -44,30 +41,20 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 	}
 
-	@Test(expected = IOException.class)
-	public void testWithWrongReferencePanel() throws IOException {
-
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
-		RefPanel.loadFromYamlFile(panels, "missing-reference-panel");
-
-	}
-
 	@Test
 	public void testHg38DataWithBuild19() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr20/panels.txt";
 		String inputFolder = "test-data/data/chr20-unphased-hg38";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr20/hapmap2.json");
 		command.setBuild("hg19");
 		command.setPopulation("eur");
 
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
 		assertTrue(log.hasInMemory("This is not a valid hg19 encoding."));
 		assertTrue(log.hasInMemory("::error::"));
 
@@ -76,13 +63,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrongVcfFile() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/wrong_vcf";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(-1, (int) command.call());
@@ -96,13 +80,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testMixedPopulation() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("mixed");
 
 		assertEquals(0, (int) command.call());
@@ -112,13 +93,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testCorrectHrcPopulation() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hrc-fake");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hrc-fake.json");
 		command.setPopulation("mixed");
 
 		assertEquals(0, (int) command.call());
@@ -128,13 +106,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrongHrcPopulation() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hrc-fake");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hrc-fake.json");
 		command.setPopulation("aas");
 
 		assertEquals(-1, (int) command.call());
@@ -149,13 +124,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrong1KP3Population() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase3-fake");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/phase3-fake.json");
 		command.setPopulation("asn");
 
 		assertEquals(-1, (int) command.call());
@@ -170,19 +142,15 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrongTopmedPopulation() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "TOPMedfreeze6-fake");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/TOPMedfreeze6-fake.json");
 		command.setPopulation("asn");
 
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
-		log.view();
 		assertTrue(log.hasInMemory("::group type=error::"));
 		assertTrue(log.hasInMemory("Population 'asn' is not supported by reference panel 'TOPMedfreeze6-fake'"));
 	}
@@ -190,14 +158,11 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testUnorderedVcfFile() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/unorderd";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(-1, (int) command.call());
@@ -211,13 +176,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testWrongChromosomes() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/wrong_chrs";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(-1, (int) command.call());
@@ -230,19 +192,15 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testSingleUnphasedVcfWithEagle() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
-		log.view();
 		assertTrue(log.hasInMemory("1 valid VCF file(s) found."));
 		assertTrue(log.hasInMemory("Samples: 41"));
 		assertTrue(log.hasInMemory("Chromosomes: 1"));
@@ -257,13 +215,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testThreeUnphasedVcfWithEagle() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/three";
-		// create workflow context
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
 
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(0, (int) command.call());
@@ -283,15 +238,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testTabixIndexCreationChr20() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
-		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/chr20-phased";
 
-		// create workflow context
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(0, (int) command.call());
@@ -321,15 +271,10 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	@Test
 	public void testTabixIndexCreationChr1() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
-		// input folder contains no vcf or vcf.gz files
 		String inputFolder = "test-data/data/single";
 
-		// create workflow context
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		InputValidationCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
 		assertEquals(0, (int) command.call());

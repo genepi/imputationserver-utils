@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
-import genepi.imputationserver.steps.fastqc.legend.LegendEntry;
-import genepi.imputationserver.steps.fastqc.legend.LegendFileReader;
+import genepi.imputationserver.steps.fastqc.legend.SitesEntry;
+import genepi.imputationserver.steps.fastqc.legend.SitesFileReader;
 import genepi.imputationserver.steps.vcf.BGzipLineWriter;
 import genepi.imputationserver.steps.vcf.FastVCFFileReader;
 import genepi.imputationserver.steps.vcf.MinimalVariantContext;
@@ -17,6 +17,7 @@ import genepi.imputationserver.steps.vcf.VcfChunk;
 import genepi.imputationserver.steps.vcf.VcfFile;
 import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.GenomicTools;
+import genepi.imputationserver.util.StringUtils;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
 import genepi.io.text.LineWriter;
@@ -38,6 +39,9 @@ public class StatisticsTask implements ITask {
 	public static final String X_PAR2 = "X.PAR2";
 	public static final String X_NON_PAR = "X.nonPAR";
 
+	private String sitesFile;
+	private int refSamples;
+	private String build;
 	private double sampleCallrate;
 	private double minSnps;
 	private double referenceOverlap;
@@ -55,9 +59,7 @@ public class StatisticsTask implements ITask {
 	private int phasingWindow;
 	private String[] vcfFilenames;
 	private LineWriter excludedSnpsWriter;
-	private String legendFile;
-	private int refSamples;
-	private String build;
+
 	private HashSet<RangeEntry> ranges;
 
 	// overall stats
@@ -202,7 +204,7 @@ public class StatisticsTask implements ITask {
 
 		String metafile = FileUtil.path(chunkFileDir, contig);
 		LineWriter metafileWriter = new LineWriter(metafile);
-		LegendFileReader legendReader = getReader(myvcfFile.getChromosome());
+		SitesFileReader legendReader = getReader(myvcfFile.getChromosome());
 
 		int samples = myvcfFile.getNoSamples();
 
@@ -237,7 +239,7 @@ public class StatisticsTask implements ITask {
 			}
 
 			// load reference snp
-			LegendEntry refSnp = legendReader.findByPosition(snp.getStart());
+			SitesEntry refSnp = legendReader.findByPosition(myvcfFile.getChromosome(), snp.getStart());
 
 			for (VcfChunk openChunk : chunks.values()) {
 				if (snp.getStart() <= openChunk.getEnd() + phasingWindow) {
@@ -307,8 +309,8 @@ public class StatisticsTask implements ITask {
 
 	}
 
-	private void processLine(MinimalVariantContext snp, LegendEntry refSnp, int samples, BGzipLineWriter vcfWriter,
-			VcfChunk chunk, LineWriter mafWriter, LineWriter excludedSnpsWriter, LineWriter typedOnlyWriter)
+	private void processLine(MinimalVariantContext snp, SitesEntry refSnp, int samples, BGzipLineWriter vcfWriter,
+							 VcfChunk chunk, LineWriter mafWriter, LineWriter excludedSnpsWriter, LineWriter typedOnlyWriter)
 			throws IOException, InterruptedException {
 
 		if (ranges != null) {
@@ -345,7 +347,7 @@ public class StatisticsTask implements ITask {
 			return;
 		}
 
-		String alt = snp.getAlternateAllele() + "";
+		String alt = snp.getAlternateAllele();
 
 		// filter invalid alleles
 		if (!GenomicTools.isValid(ref) || !GenomicTools.isValid(alt)) {
@@ -443,8 +445,8 @@ public class StatisticsTask implements ITask {
 				chunk.foundInLegendChunk++;
 			}
 
-			char legendRef = refSnp.getAlleleA();
-			char legendAlt = refSnp.getAlleleB();
+			char legendRef = refSnp.getRefAllele();
+			char legendAlt = refSnp.getAltAllele();
 
 			/** simple match of ref/alt in study and legend file **/
 			if (GenomicTools.match(snp, refSnp)) {
@@ -790,27 +792,18 @@ public class StatisticsTask implements ITask {
 		}
 	}
 
-	private LegendFileReader getReader(String _chromosome) throws IOException, InterruptedException {
-
+	private SitesFileReader getReader(String chromosome) throws IOException {
 		// one file for all chrX legends
-		if (VcfFileUtil.isChrX(_chromosome)) {
-			_chromosome = "X";
+		if (VcfFileUtil.isChrX(chromosome)) {
+			chromosome = "X";
 		}
 
-		String legendFile_ = legendFile.replaceAll("\\$chr", _chromosome);
-		String myLegendFile = FileUtil.path(legendFile_);
-		if (!new File(myLegendFile).exists()) {
+		String siteFile = StringUtils.resolveVariable(sitesFile, "chr", chromosome);
 
-			throw new InterruptedException("This reference panel doesn't support chromosome " + _chromosome + ". File " + myLegendFile + " not found.");
-
+		if (!new File(siteFile).exists()) {
+			throw new IOException("This reference panel doesn't support chromosome " + chromosome + ". File " + siteFile + " not found.");
 		}
-
-		LegendFileReader legendReader = new LegendFileReader(myLegendFile, population);
-		legendReader.createIndex();
-		legendReader.initSearch();
-
-		return legendReader;
-
+		return new SitesFileReader(siteFile, population);
 	}
 
 	public void setMafFile(String mafFile) {
@@ -841,8 +834,8 @@ public class StatisticsTask implements ITask {
 		this.phasingWindow = phasingWindow;
 	}
 
-	public void setLegendFile(String legendFile) {
-		this.legendFile = legendFile;
+	public void setSitesFile(String sitesFile) {
+		this.sitesFile = sitesFile;
 	}
 
 	public void setRefSamples(int refSamples) {

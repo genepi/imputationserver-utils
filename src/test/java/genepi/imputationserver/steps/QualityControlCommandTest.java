@@ -16,7 +16,6 @@ import genepi.io.text.LineReader;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
-import net.lingala.zip4j.exception.ZipException;
 
 public class QualityControlCommandTest extends AbstractTestcase {
 
@@ -31,13 +30,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatistics() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -52,13 +48,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticAllChunksExcluded() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 
 		assertEquals(-1, (int) command.call());
 
@@ -71,13 +64,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsAllChunksFailed() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-qc";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 
 		assertEquals(-1, (int) command.call());
 
@@ -94,13 +84,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountLinesInFailedChunkFile() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-qc";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 
 		assertEquals(-1, (int) command.call());
 
@@ -126,13 +113,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsAllChunksPassed() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -146,13 +130,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountSitesForOneChunkedContig() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 
 		assertEquals(0, (int) command.call());
 
@@ -183,13 +164,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountAmountSplitsForSeveralContigs() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 
 		assertEquals(0, (int) command.call());
 
@@ -213,13 +191,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountLinesInChunkMetaFile() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		LineReader reader = new LineReader(FileUtil.path(TEST_DATA_TMP, "1"));
@@ -236,13 +211,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testCountSamplesInCreatedChunk() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		for (File file : new File(TEST_DATA_TMP).listFiles()) {
@@ -263,14 +235,11 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testMonomorphicSnps() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr20/panels.txt";
 		String inputFolder1 = "test-data/data/chr20-phased-1sample";
 		String inputFolder50 = "test-data/data/chr20-phased";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder1);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr20/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -288,15 +257,12 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXSplits() throws Exception, ZipException {
+	public void testChrXSplits() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
 
 		assertEquals(0, (int) command.call());
 
@@ -312,15 +278,12 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXInvalidAlleles() throws Exception, ZipException {
+	public void testChrXInvalidAlleles() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-phased-invalid";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
 
 		assertEquals(0, (int) command.call());
 
@@ -331,15 +294,12 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXMixedGenotypes() throws Exception, ZipException {
+	public void testChrXMixedGenotypes() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-mixed";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -348,15 +308,12 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXPloidyError() throws Exception, ZipException {
+	public void testChrXPloidyError() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased-ploidy";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -367,13 +324,11 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 	@Test
 	public void testAlleleFrequencyCheckWithWrongPopulation() throws Exception {
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
+
 		String inputFolder = "test-data/data/single";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("afr");
 		assertEquals(-1, (int) command.call());
 
@@ -386,13 +341,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testAlleleFrequencyCheckWithNoSamplesForPopulation() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -404,13 +356,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsAllowStrandFlips() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -424,13 +373,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsDontAllowStrandFlips() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-strandflips");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-strandflips.json");
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -446,14 +392,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsDontAllowAlleleSwitches() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation-switches";
 
-		// create workflow context
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-alleleswitches");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-alleleswitches.json");
 		assertEquals(-1, (int) command.call());
 		
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -467,13 +409,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsFilterOverlap() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-ref-overlap");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-ref-overlap.json");
 		command.call();
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -486,17 +425,15 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsFilterMinSnps() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-min-snps");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-min-snps.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
+		log.view();
 		assertTrue(log.hasInMemory("<b>Warning:</b> 2 Chunk(s) excluded: < 1000 SNPs"));
 
 	}
@@ -504,13 +441,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testQcStatisticsFilterSampleCallrate() throws Exception {
 
-		String panels = "test-data/configs/hapmap-3chr/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-3chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-qcfilter-low-callrate");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-low-callrate.json");
 		command.call();
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -522,9 +456,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChr23PipelineLifting() throws Exception, ZipException {
+	public void testChr23PipelineLifting() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chr23-unphased";
 
 		// maybe git large files?
@@ -535,10 +468,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 			return;
 		}
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX-hg38/phase1.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -549,9 +480,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
-	public void testChrXPipelineLifting() throws Exception, ZipException {
+	public void testChrXPipelineLifting() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chrX-hg38/panels.txt";
 		String inputFolder = "test-data/data/chrX-unphased";
 
 		// maybe git large files?
@@ -562,10 +492,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 			return;
 		}
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "phase1");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chrX-hg38/phase1.json");
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -577,13 +505,10 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testRegionImputationSimple() throws Exception {
 
-		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-region-simple");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2-region-simple.json");
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -599,10 +524,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		String panels = "test-data/configs/hapmap-chr1/panels.txt";
 		String inputFolder = "test-data/data/simulated-chip-1chr-imputation";
 
-		RefPanel panel = RefPanel.loadFromYamlFile(panels, "hapmap2-region-complex");
-
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setRefPanel(panel);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2-region-complex.json");
 		command.call();
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
