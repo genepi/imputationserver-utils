@@ -18,11 +18,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 
 public class InputValidationCommandTest extends AbstractTestcase {
 
-	private static final String TABIX_HOME = "files/bin/tabix";
-
 	private static final String CLOUDGENE_LOG = "cloudgene.report";
-
-	public static final boolean VERBOSE = true;
 
 	@Test
 	public void testHg19DataWithBuild38() throws Exception {
@@ -303,7 +299,6 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		InputValidationCommand command = new InputValidationCommand();
 		command.setMinSamples(1);
 		command.setFiles(getFiles(inputFolder));
-		command.setupTabix(TABIX_HOME);
 		command.setReport(CLOUDGENE_LOG);
 		return command;
 	}

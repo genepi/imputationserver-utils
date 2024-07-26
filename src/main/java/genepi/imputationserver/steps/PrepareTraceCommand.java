@@ -48,11 +48,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 	private OutputWriter outputWriter = null;
 
 	public PrepareTraceCommand() {
-		VcfFileUtil.setTabixBinary("tabix");
-	}
 
-	protected void setupTabix(String path) {
-		VcfFileUtil.setTabixBinary(path);
 	}
 
 	@Override

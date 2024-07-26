@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import genepi.imputationserver.util.AbstractTestcase;
 import genepi.imputationserver.util.OutputReader;
-import genepi.imputationserver.util.RefPanel;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
 import htsjdk.samtools.util.CloseableIterator;
@@ -18,10 +17,6 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 
 public class QualityControlCommandTest extends AbstractTestcase {
-
-	public static final boolean VERBOSE = true;
-
-	private static final String TABIX_HOME = "files/bin/tabix";
 
 	private static final String CLOUDGENE_LOG = "cloudgene.report";
 
@@ -46,18 +41,21 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 	}
 
-	/*@Test
-	public void testQcStatisticsAndLifting() throws Exception {
+	@Test
+	public void testQcStatisticsAndLiftOver() throws Exception {
 
 		String inputFolder = "test-data/data/chr20-phased-hg38";
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setPopulation("eur");
+		command.setBuild("hg38");
 		command.setReference("test-data/configs/hapmap-chr20/hapmap2.json");
 		command.setChainFile("test-data/configs/hapmap-chr20/hg38ToHg19.over.chain.gz");
-		assertEquals(0, (int) command.call());
+		command.call();
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
 
-	}*/
+	}
 
 	@Test
 	public void testQcStatisticAllChunksExcluded() throws Exception {
@@ -558,7 +556,6 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = new QualityControlCommand();
 		command.setFiles(getFiles(inputFolder));
-		command.setupTabix(TABIX_HOME);
 		command.setMafOutput(FileUtil.path(TEST_DATA_TMP, "maf.txt"));
 		command.setMetafilesOutput(TEST_DATA_TMP);
 		command.setChunksOutput(TEST_DATA_TMP);

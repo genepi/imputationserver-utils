@@ -775,7 +775,6 @@ public class StatisticsTask implements ITask {
 			if (hapSamples.contains(name) && genotype.getPloidy() != 1) {
 				chrXInfoWriter.write(name, snp.getContig() + ":" + snp.getStart());
 				this.chrXPloidyError = true;
-
 			}
 
 			if (genotype.getPloidy() == 1) {

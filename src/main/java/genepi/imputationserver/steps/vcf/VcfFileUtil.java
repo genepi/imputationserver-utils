@@ -9,18 +9,13 @@ import genepi.command.Command;
 import genepi.io.FileUtil;
 import genepi.io.text.LineReader;
 import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.tribble.index.IndexFactory;
+import htsjdk.tribble.index.tabix.TabixFormat;
+import htsjdk.tribble.index.tabix.TabixIndex;
+import htsjdk.variant.vcf.VCFCodec;
 
 public class VcfFileUtil {
-
-	public static String TABIX_PATH = "bin/";
-
-	public static void setTabixBinary(String binaries) {
-		TABIX_PATH = binaries;
-	}
-	
-	public static String getBinary(){
-		return TABIX_PATH;
-	}
 	
 	public static VcfFile load(String vcfFilename, int chunksize, boolean createIndex) throws IOException {
 
@@ -133,20 +128,11 @@ public class VcfFileUtil {
 			// create index
 			if (createIndex && !new File(vcfFilename + ".tbi").exists()) {
 
-				File command = new File(TABIX_PATH);
-				if (!command.canExecute()){
-					command.setExecutable(true, false);
-				}
-				
-				Command tabix = new Command(TABIX_PATH);
-				tabix.setParams("-f", "-p", "vcf", vcfFilename);
-				tabix.saveStdErr("tabix.output");
-				int returnCode = tabix.execute();
-
-				if (returnCode != 0) {
+				try {
+					createIndex(vcfFilename);
+				} catch (IOException e) {
 					throw new IOException(
-							"The provided VCF file is malformed. Error during index creation: "
-									+ FileUtil.readFileAsString("tabix.output"));
+							"The provided VCF file is malformed. Error during index creation: " + e.getMessage());
 				}
 
 			}
@@ -261,17 +247,13 @@ public class VcfFileUtil {
 	}
 
 
-	public static void createIndex(String vcfFilename) throws IOException{
-		Command tabix = new Command(TABIX_PATH);
-		tabix.setParams("-f", "-p", "vcf", vcfFilename);
-		tabix.saveStdErr("tabix.output");
-		int returnCode = tabix.execute();
-
-		if (returnCode != 0) {
-			throw new IOException(
-					"The provided VCF file is malformed. Error during index creation: "
-							+ FileUtil.readFileAsString("tabix.output"));
-		}
-		
+	public static void createIndex(String vcfFilename) throws IOException {
+		File vcfFile = new File(vcfFilename);
+		VCFFileReader reader = new VCFFileReader(vcfFile, false);
+		SAMSequenceDictionary vcfDict = reader.getFileHeader().getSequenceDictionary();
+		TabixIndex index = IndexFactory.createTabixIndex(new File(vcfFilename), new VCFCodec(), TabixFormat.VCF, vcfDict);
+		index.writeBasedOnFeatureFile(new File(vcfFilename));
+		reader.close();
 	}
+
 }
