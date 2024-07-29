@@ -27,4 +27,5 @@ public class StringUtils {
     public static String format(double number) {
         return formatterDouble.format(number);
     }
+
 }
