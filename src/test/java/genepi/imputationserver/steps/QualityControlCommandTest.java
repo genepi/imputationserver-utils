@@ -59,6 +59,22 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
+	public void testQcStatisticsAndLiftOverHg19ToHg38() throws Exception {
+
+		String inputFolder = "test-data/data/chr20-phased";
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setPopulation("eur");
+		command.setBuild("hg19");
+		command.setReference("test-data/configs/hapmap-chr20-hg38/hapmap2.json");
+		command.setChainFile("test-data/configs/hapmap-chr20-hg38/hg19ToHg38.over.chain.gz");
+		command.call();
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+
+	}
+
+	@Test
 	public void testQcStatisticsChr20Hg19() throws Exception {
 
 		String inputFolder = "test-data/data/chr20-phased";
@@ -503,47 +519,34 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	@Test
 	public void testChr23PipelineLifting() throws Exception {
 
-		String inputFolder = "test-data/data/chr23-unphased";
-
-		// maybe git large files?
-		if (!new File(
-				"test-data/configs/hapmap-chrX-hg38/ref-panels/ALL.X.nonPAR.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.hg38.bcf")
-				.exists()) {
-			System.out.println("chrX bcf nonPAR file not available");
-			return;
-		}
+		String inputFolder = "test-data/data/chr23-phased";
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference("test-data/configs/hapmap-chrX-hg38/phase1.json");
+		command.setReference("test-data/configs/hapmap-chrX-hg38/hapmap2.json");
+		command.setChainFile("test-data/configs/hapmap-chr20-hg38/hg19ToHg38.over.chain.gz");
+
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
-
-		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
-		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,972"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 18,041"));
 
 	}
 
 	@Test
 	public void testChrXPipelineLifting() throws Exception {
 
-		String inputFolder = "test-data/data/chrX-unphased";
-
-		// maybe git large files?
-		if (!new File(
-				"test-data/configs/hapmap-chrX-hg38/ref-panels/ALL.X.nonPAR.phase1_v3.snps_indels_svs.genotypes.all.noSingleton.recode.hg38.bcf")
-				.exists()) {
-			System.out.println("chrX bcf nonPAR file not available");
-			return;
-		}
+		String inputFolder = "test-data/data/chrX-phased";
 
 		QualityControlCommand command = buildCommand(inputFolder);
-		command.setReference("test-data/configs/hapmap-chrX-hg38/phase1.json");
+		command.setReference("test-data/configs/hapmap-chrX-hg38/hapmap2.json");
+		command.setChainFile("test-data/configs/hapmap-chr20-hg38/hg19ToHg38.over.chain.gz");
+
 		assertEquals(0, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 8,973"));
-		assertTrue(log.hasInMemory("[MESSAGE] [WARN] Excluded sites in total: 18,076"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 18,041"));
 
 	}
 

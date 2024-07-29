@@ -248,12 +248,9 @@ public class VcfFileUtil {
 
 
 	public static void createIndex(String vcfFilename) throws IOException {
-		File vcfFile = new File(vcfFilename);
-		VCFFileReader reader = new VCFFileReader(vcfFile, false);
-		SAMSequenceDictionary vcfDict = reader.getFileHeader().getSequenceDictionary();
-		TabixIndex index = IndexFactory.createTabixIndex(new File(vcfFilename), new VCFCodec(), TabixFormat.VCF, vcfDict);
+		TabixIndex index = IndexFactory.createTabixIndex(new File(vcfFilename), new VCFCodec(), TabixFormat.VCF, null);
 		index.writeBasedOnFeatureFile(new File(vcfFilename));
-		reader.close();
+
 	}
 
 }
