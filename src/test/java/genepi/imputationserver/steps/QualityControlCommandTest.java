@@ -46,6 +46,38 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
+	public void testQcStatisticsChr20Hg19() throws Exception {
+
+		String inputFolder = "test-data/data/chr20-phased";
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setPopulation("eur");
+		command.setReference("test-data/configs/hapmap-chr20/hapmap2.json");
+		command.call();
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		assertTrue(log.hasInMemory("Remaining sites in total: 7,735"));
+
+	}
+	@Test
+	public void testQcStatisticsChr20Hg38() throws Exception {
+
+		String inputFolder = "test-data/data/chr20-phased-hg38";
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setPopulation("eur");
+		command.setBuild("hg38");
+		//set the following file in hapmap2: hapmap_r22.chr20.CEU.hg38_impute.legend.gz
+		command.setReference("test-data/configs/hapmap-chr20-hg38/hapmap2.json");
+		command.call();
+
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("Remaining sites in total: 7,735"));
+
+	}
+
+
+	@Test
 	public void testQcStatisticAllChunksExcluded() throws Exception {
 
 		String inputFolder = "test-data/data/single";

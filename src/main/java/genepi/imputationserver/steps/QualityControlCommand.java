@@ -434,4 +434,7 @@ public class QualityControlCommand implements Callable<Integer> {
 
 	}
 
+	public void setBuild(String build) {
+		this.build = build;
+	}
 }
