@@ -103,10 +103,6 @@ public class QualityControlCommand implements Callable<Integer> {
 		this.report = report;
 	}
 
-	public void setBuild(String build) {
-		this.build = build;
-	}
-
 	@Override
 	public Integer call() throws Exception {
 

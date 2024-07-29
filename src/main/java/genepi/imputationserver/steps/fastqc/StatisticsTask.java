@@ -60,9 +60,6 @@ public class StatisticsTask implements ITask {
 	private int phasingWindow;
 	private String[] vcfFilenames;
 
-	private LineWriter excludedSnpsWriter;
-
-
 	private HashSet<RangeEntry> ranges;
 
 	// overall stats
