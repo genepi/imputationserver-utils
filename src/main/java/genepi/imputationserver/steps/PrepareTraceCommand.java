@@ -48,11 +48,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 	private OutputWriter outputWriter = null;
 
 	public PrepareTraceCommand() {
-		VcfFileUtil.setTabixBinary("tabix");
-	}
 
-	protected void setupTabix(String path) {
-		VcfFileUtil.setTabixBinary(path);
 	}
 
 	@Override
@@ -93,7 +89,7 @@ public class PrepareTraceCommand implements Callable<Integer> {
 				task.setVcfFilenames(files);
 				task.setChainFile(fullPathChainFile);
 				task.setChunksDir(chunksDir);
-				task.setExcludedSnpsWriter(null);
+				task.setStatDir(output);
 
 				TaskResults results = runTask(outputWriter, task);
 

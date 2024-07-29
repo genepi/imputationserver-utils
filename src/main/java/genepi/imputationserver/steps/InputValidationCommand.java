@@ -63,7 +63,7 @@ public class InputValidationCommand implements Callable<Integer> {
 	private OutputWriter output = null;
 
 	public InputValidationCommand() {
-		VcfFileUtil.setTabixBinary("tabix");
+
 	}
 
 	public void setFiles(List<String> files) {
@@ -116,10 +116,6 @@ public class InputValidationCommand implements Callable<Integer> {
 
 	public void setContactEmail(String contactEmail) {
 		this.contactEmail = contactEmail;
-	}
-
-	protected void setupTabix(String path) {
-		VcfFileUtil.setTabixBinary(path);
 	}
 
 	@Override
