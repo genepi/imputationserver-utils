@@ -239,7 +239,7 @@ public class StatisticsTask implements ITask {
 			}
 
 			// load reference snp
-			SitesEntry refSnp = legendReader.findByPosition(myvcfFile.getChromosome(), snp.getStart());
+			SitesEntry refSnp = legendReader.findByPosition(myvcfFile.getRawChromosome(), snp.getStart());
 
 			for (VcfChunk openChunk : chunks.values()) {
 				if (snp.getStart() <= openChunk.getEnd() + phasingWindow) {
