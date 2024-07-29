@@ -33,11 +33,13 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		assertEquals(-1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
 
 		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 185"));
 		assertTrue(log.hasInMemory("Excluded sites in total: 336"));
 		assertTrue(log.hasInMemory("Remaining sites in total: 96"));
 		assertTrue(log.hasInMemory("Monomorphic sites: 331"));
+		assertTrue(log.hasInMemory("Reference Overlap: 16.87 %"));
 	}
 
 	@Test
@@ -84,7 +86,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		log.view();
 		assertTrue(log.hasInMemory("Remaining sites in total: 7,735"));
-
+		assertTrue(log.hasInMemory("Reference Overlap: 99.00 %"));
 	}
 
 
