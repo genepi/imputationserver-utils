@@ -11,7 +11,6 @@ import genepi.imputationserver.steps.fastqc.LiftOverTask;
 import genepi.imputationserver.steps.fastqc.RangeEntry;
 import genepi.imputationserver.steps.fastqc.StatisticsTask;
 import genepi.imputationserver.steps.fastqc.TaskResults;
-import genepi.imputationserver.steps.vcf.VcfFileUtil;
 import genepi.imputationserver.util.OutputWriter;
 import genepi.imputationserver.util.RefPanel;
 import genepi.imputationserver.util.RefPanelPopulation;
@@ -208,7 +207,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		task.setBuild(panel.getBuild());
 
 		double referenceOverlap = panel.getQcFilterByKey("overlap");
-		task.setReferenceOverlap(referenceOverlap);
+		task.setMinReferenceOverlap(referenceOverlap);
 
 		int minSnps = (int) panel.getQcFilterByKey("minSnps");
 		task.setMinSnps(minSnps);
@@ -243,7 +242,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			text.add("Ref. Panel Range: " + panel.getRange());
 		}
 		text.add("Alternative allele frequency > 0.5 sites: " + StringUtils.format(task.getAlternativeAlleles()));
-		text.add("Reference Overlap: " + StringUtils.format(task.getReferenceOverlap() * 100) + " %");
+		text.add("Reference Overlap: " + StringUtils.format(task.getFoundInLegend() / (double) (task.getFoundInLegend() + task.getNotFoundInLegend()) * 100) + " %");
 		text.add("Match: " + StringUtils.format(task.getMatch()));
 		text.add("Allele switch: " + StringUtils.format(task.getAlleleSwitch()));
 		text.add("Strand flip: " + StringUtils.format(task.getStrandFlipSimple()));

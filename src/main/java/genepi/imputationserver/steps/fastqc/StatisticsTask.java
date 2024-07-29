@@ -45,7 +45,7 @@ public class StatisticsTask implements ITask {
 	private String build;
 	private double sampleCallrate;
 	private double minSnps;
-	private double referenceOverlap;
+	private double minReferenceOverlap;
 	private double mixedGenotypeschrX;
 
 	private String chunkFileDir = "tmp";
@@ -580,7 +580,7 @@ public class StatisticsTask implements ITask {
 
 		double overlap = chunk.foundInLegendChunk / (double) (chunk.foundInLegendChunk + chunk.notFoundInLegendChunk);
 
-		if (overlap >= referenceOverlap && chunk.foundInLegendChunk >= minSnps && !lowSampleCallRate
+		if (overlap >= minReferenceOverlap && chunk.foundInLegendChunk >= minSnps && !lowSampleCallRate
 				&& chunk.validSnpsChunk >= minSnps) {
 
 			// create index
@@ -595,7 +595,7 @@ public class StatisticsTask implements ITask {
 
 			excludedChunkWriter.write(chunk,  overlap, countLowSamples);
 
-			if (overlap < referenceOverlap) {
+			if (overlap < minReferenceOverlap) {
 				removedChunksOverlap++;
 			} else if (chunk.foundInLegendChunk < minSnps || chunk.validSnpsChunk < minSnps) {
 				removedChunksSnps++;
@@ -982,12 +982,12 @@ public class StatisticsTask implements ITask {
 		this.minSnps = minSnps;
 	}
 
-	public double getReferenceOverlap() {
-		return referenceOverlap;
+	public double getMinReferenceOverlap() {
+		return minReferenceOverlap;
 	}
 
-	public void setReferenceOverlap(double referenceOverlap) {
-		this.referenceOverlap = referenceOverlap;
+	public void setMinReferenceOverlap(double minReferenceOverlap) {
+		this.minReferenceOverlap = minReferenceOverlap;
 	}
 
 	public double getMixedGenotypeschrX() {
