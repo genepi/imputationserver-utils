@@ -131,15 +131,15 @@ public class InputValidationCommand implements Callable<Integer> {
 			panel = RefPanel.loadFromJson(reference);
 		} catch (Exception e) {
 			output.error("Unable to parse reference panel:" ,e);
-			return -1;
+			return 1;
 		}
 
 		if (!checkParameters()) {
-			return -1;
+			return 1;
 		}
 
 		if (!checkVcfFiles()) {
-			return -1;
+			return 1;
 		} else {
 			return 0;
 		}

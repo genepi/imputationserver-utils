@@ -115,12 +115,12 @@ public class QualityControlCommand implements Callable<Integer> {
 			panel = RefPanel.loadFromJson(reference);
 		} catch (Exception e) {
 			output.error("Unable to parse reference panel:", e);
-			return -1;
+			return 1;
 		}
 
 		if (files.isEmpty()) {
 			output.error("No vcf files provided.");
-			return -1;
+			return 1;
 		}
 
 		Collections.sort(files);
@@ -129,14 +129,14 @@ public class QualityControlCommand implements Callable<Integer> {
 		if (!build.equals(panel.getBuild())) {
 			vcfFilenames = liftOver(vcfFilenames);
 			if (vcfFilenames == null) {
-				return -1;
+				return 1;
 			}
 		}
 
 		if (analyzeFiles(vcfFilenames)) {
 			return 0;
 		} else {
-			return -1;
+			return 1;
 		}
 
 	}
