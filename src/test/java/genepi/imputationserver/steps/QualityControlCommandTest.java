@@ -30,7 +30,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setPopulation("eur");
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		log.view();
@@ -114,7 +114,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		// check statistics
@@ -130,7 +130,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
@@ -150,7 +150,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-3chr/hapmap2.json");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		LineReader reader = new LineReader(FileUtil.path(TEST_DATA_TMP, "chunks-excluded.txt"));
 
@@ -361,7 +361,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("Chromosome X nonPAR region includes > 10 % mixed genotypes."));
@@ -375,7 +375,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chrX/phase1.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
@@ -391,7 +391,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("afr");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
@@ -438,7 +438,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-strandflips.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
@@ -457,7 +457,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-3chr/hapmap2-qcfilter-alleleswitches.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 		
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		
@@ -557,7 +557,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 
 		QualityControlCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2-region-simple.json");
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 

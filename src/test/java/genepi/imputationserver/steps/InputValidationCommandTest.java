@@ -29,7 +29,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setBuild("hg38");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("This is not a valid hg38 encoding."));
@@ -47,7 +47,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setBuild("hg19");
 		command.setPopulation("eur");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		log.view();
@@ -65,7 +65,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		// check error message
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -108,7 +108,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/hrc-fake.json");
 		command.setPopulation("aas");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		// check error message
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -126,7 +126,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/phase3-fake.json");
 		command.setPopulation("asn");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		// check error message
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
@@ -144,7 +144,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/TOPMedfreeze6-fake.json");
 		command.setPopulation("asn");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("::group type=error::"));
@@ -160,7 +160,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		log.view();
@@ -178,7 +178,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
 
-		assertEquals(-1, (int) command.call());
+		assertEquals(1, (int) command.call());
 
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		assertTrue(log.hasInMemory("::error:: The provided VCF file contains more than one chromosome."));
