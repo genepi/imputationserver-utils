@@ -318,7 +318,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		else if (task.getAlleleSwitch() + task.getStrandFlipAndAlleleSwitch() > alleleSwitches) {
 			text.add("<br><b>Error:</b> More than " + alleleSwitches
 					+ " allele switches have been detected. Imputation cannot be started!");
-			output.error(text.toString());
+			output.error(text);
 			return false;
 		}
 
