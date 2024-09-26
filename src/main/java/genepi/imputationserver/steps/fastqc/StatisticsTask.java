@@ -1,27 +1,14 @@
 package genepi.imputationserver.steps.fastqc;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-
 import genepi.imputationserver.steps.fastqc.io.*;
 import genepi.imputationserver.steps.fastqc.legend.SitesEntry;
 import genepi.imputationserver.steps.fastqc.legend.SitesFileReader;
-import genepi.imputationserver.steps.vcf.BGzipLineWriter;
-import genepi.imputationserver.steps.vcf.FastVCFFileReader;
-import genepi.imputationserver.steps.vcf.MinimalVariantContext;
-import genepi.imputationserver.steps.vcf.VcfChunk;
-import genepi.imputationserver.steps.vcf.VcfFile;
-import genepi.imputationserver.steps.vcf.VcfFileUtil;
+import genepi.imputationserver.steps.vcf.*;
 import genepi.imputationserver.util.GenomicTools;
 import genepi.imputationserver.util.StringUtils;
 import genepi.io.FileUtil;
-import genepi.io.text.LineWriter;
 import genepi.io.text.LineReader;
+import genepi.io.text.LineWriter;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
@@ -33,6 +20,14 @@ import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 import htsjdk.variant.vcf.VCFHeaderVersion;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StatisticsTask implements ITask {
 
@@ -85,7 +80,7 @@ public class StatisticsTask implements ITask {
 
 	private boolean chrXMissingRate = false;
 	private boolean chrXPloidyError = false;
- 
+
 	// chunk results
 	private int removedChunksSnps;
 	private int removedChunksOverlap;
@@ -123,7 +118,7 @@ public class StatisticsTask implements ITask {
 
 		// excluded chunks
 		String excludedChunkFile = FileUtil.path(statDir, "chunks-excluded.txt");
-		 excludedChunkWriter = new ExcludedChunksWriter(excludedChunkFile);
+		excludedChunkWriter = new ExcludedChunksWriter(excludedChunkFile);
 
 		String chrXInfoFile = FileUtil.path(statDir, "chrX-info.txt");
 		chrXInfoWriter = new ChrXInfoWriter(chrXInfoFile);
@@ -234,7 +229,7 @@ public class StatisticsTask implements ITask {
 			}
 
 			// load reference snp
-			SitesEntry refSnp = legendReader.findByPosition(myvcfFile.getRawChromosome(), snp.getStart());
+			List<SitesEntry> refSnp = legendReader.findByPosition(myvcfFile.getRawChromosome(), snp.getStart());
 
 			for (VcfChunk openChunk : chunks.values()) {
 				if (snp.getStart() <= openChunk.getEnd() + phasingWindow) {
@@ -272,7 +267,7 @@ public class StatisticsTask implements ITask {
 	}
 
 	private VcfChunk initChunk(String chr, int chunkStart, int chunkEnd, boolean phased, int samples,
-			List<String> header) throws IOException {
+							   List<String> header) throws IOException {
 		overallChunks++;
 
 		String chunkName = null;
@@ -303,14 +298,14 @@ public class StatisticsTask implements ITask {
 
 	}
 
-	private void processLine(MinimalVariantContext snp, SitesEntry refSnp, int samples, BGzipLineWriter vcfWriter,
+	private void processLine(MinimalVariantContext snp, List<SitesEntry> refSnps, int samples, BGzipLineWriter vcfWriter,
 							 VcfChunk chunk)
 			throws IOException, InterruptedException {
 
 		if (ranges != null) {
-			
+
 			boolean inRange = false;
-			
+
 			for (RangeEntry range : ranges) {
 
 				if (snp.getContig().equals(range.getChromosome()) && snp.getStart() >= range.getStart()
@@ -422,7 +417,7 @@ public class StatisticsTask implements ITask {
 
 		// update Jul 8 2016: dont filter and add "allTypedSites"
 		// minimac3 option
-		if (refSnp == null) {
+		if (refSnps.isEmpty()) {
 
 			if (insideChunk) {
 				notFoundInLegend++;
@@ -431,130 +426,127 @@ public class StatisticsTask implements ITask {
 				typedOnlyWriter.write(snp);
 			}
 
-		} else {
+			return;
+		}
 
-			if (insideChunk) {
-				foundInLegend++;
-				chunk.foundInLegendChunk++;
+		if (insideChunk) {
+			foundInLegend++;
+			chunk.foundInLegendChunk++;
+		}
+
+		// get last item to be compatible with old implementation
+
+		SitesEntry matched = null;
+		for (SitesEntry _refSnp :refSnps){
+			if (GenomicTools.match(snp, _refSnp)) {
+				matched = _refSnp;
 			}
+		}
 
-			char legendRef = refSnp.getRefAllele();
-			char legendAlt = refSnp.getAltAllele();
+		SitesEntry refSnp = refSnps.get(refSnps.size() - 1);
 
+		char legendRef = refSnp.getRefAllele();
+		char legendAlt = refSnp.getAltAllele();
+
+		if (matched != null) {
 			/** simple match of ref/alt in study and legend file **/
-			if (GenomicTools.match(snp, refSnp)) {
-
-				if (insideChunk) {
-					match++;
-				}
-
+			if (insideChunk) {
+				match++;
 			}
 
+		} else if (GenomicTools.complicatedGenotypes(snp, refSnp)) {
 			/** count A/T C/G genotypes **/
-			else if (GenomicTools.complicatedGenotypes(snp, refSnp)) {
+			if (insideChunk) {
 
-				if (insideChunk) {
-
-					complicatedGenotypes++;
-
-				}
+				complicatedGenotypes++;
 
 			}
 
+		} else if (GenomicTools.alleleSwitch(snp, refSnp)) {
 			/**
 			 * simple allele switch check; ignore A/T C/G from above
 			 **/
-			else if (GenomicTools.alleleSwitch(snp, refSnp)) {
+			if (insideChunk) {
 
-				if (insideChunk) {
-
-					alleleSwitch++;
-					filtered++;
-					excludedSnpsWriter.write(snp, "Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
-					
-				}
-				return;
+				alleleSwitch++;
+				filtered++;
+				excludedSnpsWriter.write(snp, "Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
 
 			}
+			return;
 
+		} else if (GenomicTools.strandFlip(snp, refSnp)) {
 			/** simple strand swaps **/
-			else if (GenomicTools.strandFlip(snp, refSnp)) {
-
-				if (insideChunk) {
-
-					strandFlipSimple++;
-					filtered++;
-					excludedSnpsWriter.write(snp, "Strand flip. Reference Panel: " + legendRef + "/" + legendAlt);
-
-				}
-				return;
-
-			}
-
-			else if (GenomicTools.strandFlipAndAlleleSwitch(snp, refSnp)) {
-
-				if (insideChunk) {
-
-					filtered++;
-					strandFlipAndAlleleSwitch++;
-					excludedSnpsWriter.write(snp, "Strand flip and Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
-
-				}
-
-				return;
-
-			}
-
-			// filter allele mismatches
-			else if (GenomicTools.alleleMismatch(snp, refSnp)) {
-
-				if (insideChunk) {
-					alleleMismatch++;
-					filtered++;
-					excludedSnpsWriter.write(snp, "Allele mismatch. Reference Panel: " + legendRef + "/" + legendAlt);
-				}
-				return;
-			}
-
-			// filter low call rate
-			if (snp.getNoCallCount() / (double) snp.getNSamples() > 0.10) {
-				if (insideChunk) {
-					lowCallRate++;
-					filtered++;
-					excludedSnpsWriter.write(snp , "Low call rate. Value: " + (1.0 - snp.getNoCallCount() / (double) snp.getNSamples()));
-				}
-				return;
-			}
 
 			if (insideChunk) {
 
-				// allele-frequency check
-				if (alleleFrequencyCheck && refSnp.hasFrequencies()) {
-					SnpStats statistics = GenomicTools.calculateAlleleFreq(snp, refSnp, refSamples);
-					mafWriter.write(snp, statistics);
-				}
-				overallSnps++;
-				chunk.overallSnpsChunk++;
+				strandFlipSimple++;
+				filtered++;
+				excludedSnpsWriter.write(snp, "Strand flip. Reference Panel: " + legendRef + "/" + legendAlt);
+
+			}
+			return;
+
+		} else if (GenomicTools.strandFlipAndAlleleSwitch(snp, refSnp)) {
+
+			if (insideChunk) {
+
+				filtered++;
+				strandFlipAndAlleleSwitch++;
+				excludedSnpsWriter.write(snp, "Strand flip and Allele switch. Reference Panel: " + legendRef + "/" + legendAlt);
+
 			}
 
-			// write SNPs
-			if (position >= extendedStart && position <= extendedEnd) {
+			return;
 
-				vcfWriter.write(snp.getRawLine());
-				chunk.validSnpsChunk++;
+		} else if (GenomicTools.alleleMismatch(snp, refSnp)) {
+			// filter allele mismatches
 
-				// check if all samples have
-				// enough SNPs
-				if (insideChunk) {
+			if (insideChunk) {
+				alleleMismatch++;
+				filtered++;
+				excludedSnpsWriter.write(snp, "Allele mismatch. Reference Panel: " + legendRef + "/" + legendAlt);
+			}
+			return;
+		}
 
-					for (int i = 0; i < snp.getNSamples(); i++) {
-						if (snp.isCalled(i)) {
-							chunk.snpsPerSampleCount[i] += 1;
-						}
+		// filter low call rate
+		if (snp.getNoCallCount() / (double) snp.getNSamples() > 0.10) {
+			if (insideChunk) {
+				lowCallRate++;
+				filtered++;
+				excludedSnpsWriter.write(snp, "Low call rate. Value: " + (1.0 - snp.getNoCallCount() / (double) snp.getNSamples()));
+			}
+			return;
+		}
+
+		if (insideChunk) {
+
+			// allele-frequency check
+			if (alleleFrequencyCheck && refSnp.hasFrequencies()) {
+				SnpStats statistics = GenomicTools.calculateAlleleFreq(snp, refSnp, refSamples);
+				mafWriter.write(snp, statistics);
+			}
+			overallSnps++;
+			chunk.overallSnpsChunk++;
+		}
+
+		// write SNPs
+		if (position >= extendedStart && position <= extendedEnd) {
+
+			vcfWriter.write(snp.getRawLine());
+			chunk.validSnpsChunk++;
+
+			// check if all samples have
+			// enough SNPs
+			if (insideChunk) {
+
+				for (int i = 0; i < snp.getNSamples(); i++) {
+					if (snp.isCalled(i)) {
+						chunk.snpsPerSampleCount[i] += 1;
 					}
 				}
 			}
-
 		}
 	}
 
@@ -766,7 +758,7 @@ public class StatisticsTask implements ITask {
 	}
 
 	public void checkPloidy(List<String> samples, VariantContext snp, boolean isPhased,
-			HashSet<String> hapSamples) throws IOException {
+							HashSet<String> hapSamples) throws IOException {
 
 		for (final String name : samples) {
 
