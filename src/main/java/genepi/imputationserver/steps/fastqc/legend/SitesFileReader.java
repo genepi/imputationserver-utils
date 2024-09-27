@@ -5,10 +5,10 @@ import genepi.io.text.LineReader;
 import htsjdk.tribble.readers.TabixReader;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SitesFileReader {
-
-	private SitesEntry entry = new SitesEntry();
 
 	private String population;
 
@@ -82,16 +82,18 @@ public class SitesFileReader {
 
 	}
 
-	public SitesEntry findByPosition(String chromosome, int position) throws IOException {
+	public List<SitesEntry> findByPosition(String chromosome, int position) throws IOException {
 		TabixReader.Iterator iterator = tabixReader.query(chromosome, position - 1, position);
-		String line = iterator.next();
-		if (line == null) {
-			return null;
+		List<SitesEntry> entries = new ArrayList<>();
+
+		String line;
+		while ((line = iterator.next()) != null) {
+			entries.add(parseLine(line));
 		}
 
-		//TODO: handle multiple matches with alleles... This implementation: always first, before always last.
-		return parseLine(line);
+		return entries;
 	}
+
 
 	public void close() {
 		tabixReader.close();
@@ -100,6 +102,7 @@ public class SitesFileReader {
 	protected SitesEntry parseLine(String line) {
 		String[] tiles = line.split("\t");
 
+		SitesEntry entry = new SitesEntry();
 		entry.setRsId(tiles[idColumn]);
 		entry.setRefAllele(tiles[refColumn].charAt(0));
 		entry.setAltAllele(tiles[altColumn].charAt(0));
