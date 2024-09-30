@@ -5,11 +5,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Vector;
 
-import genepi.io.text.LineReader;
+import genepi.io.FileUtil;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeader;
 
-public class FastVCFFileReader extends LineReader {
+public class FastVCFFileReader {
 
 	private List<String> samples;
 
@@ -21,13 +26,19 @@ public class FastVCFFileReader extends LineReader {
 
 	private List<String> header = new Vector<>();
 
+	private String filename;
+
+	protected BufferedReader in;
+
+	private int lineNumber;
+
+	private String line;
+
 	private VCFLineParser parser;
 
-	public FastVCFFileReader(String vcfFilename) throws IOException {
-
-		super(vcfFilename);
+	public FastVCFFileReader(String filename) throws IOException {
 		// load header
-		VCFFileReader reader = new VCFFileReader(new File(vcfFilename), false);
+		VCFFileReader reader = new VCFFileReader(new File(filename), false);
 		VCFHeader header = reader.getFileHeader();
 		samples = header.getGenotypeSamples();
 		samplesCount = samples.size();
@@ -35,6 +46,11 @@ public class FastVCFFileReader extends LineReader {
 		reader.close();
 
 		parser = new VCFLineParser(samplesCount);
+
+		this.filename = filename;
+		FileInputStream inputStream = new FileInputStream(filename);
+		InputStream in2 = FileUtil.decompressStream(inputStream);
+		this.in = new BufferedReader(new InputStreamReader(in2));
 
 	}
 
@@ -54,26 +70,45 @@ public class FastVCFFileReader extends LineReader {
 		return samplesCount;
 	}
 
-	@Override
-	protected void parseLine(String line) throws IOException {
+	public boolean next() throws IOException {
+		while(true) {
+			if ((this.line = this.in.readLine()) != null) {
+				try {
+					this.lineNumber++;
+					if (this.line.trim().isEmpty()) {
+						continue;
+					}
 
-		// not a header line
-		if (line.charAt(0) != '#') {
+					// Check if the line starts with '#' and skip processing for header lines
+					if (this.line.startsWith("#")) {
+						header.add(this.line);
+						continue;
+					}
 
-			variantContext = parser.parseLine(line);
-
-			if (variantContext.getNSamples() != samplesCount) {
-				throw new IOException("Line " + getLineNumber() + ": different number of samples.");
+					// Parse non-header lines
+					this.parseLine(this.line);
+					return true;
+				} catch (Exception var2) {
+					throw new IOException(this.filename + ": Line " + this.lineNumber + ": " + var2.getMessage());
+				}
 			}
 
-			snpsCount++;
-
-		} else {
-			header.add(line);
-			next();
+			return false;
 		}
-
 	}
+
+	protected void parseLine(String line) throws IOException {
+		variantContext = parser.parseLine(line);
+		if (variantContext.getNSamples() != samplesCount) {
+			throw new IOException("Line " + lineNumber + ": different number of samples.");
+		}
+		snpsCount++;
+	}
+
+	public void close() throws IOException {
+		in.close();
+	}
+
 
 	public List<String> getFileHeader() {
 		return header;
