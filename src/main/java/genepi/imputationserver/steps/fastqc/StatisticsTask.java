@@ -348,21 +348,6 @@ public class StatisticsTask implements ITask {
 			return;
 		}
 
-		// count duplicates
-
-		if ((chunk.lastPos == snp.getStart() && chunk.lastPos > 0)) {
-
-			if (insideChunk) {
-				duplicates++;
-				excludedSnpsWriter.write(snp, "Duplicate");
-				filtered++;
-			}
-
-			chunk.lastPos = snp.getStart();
-			return;
-
-		}
-
 		// update last pos only when not filtered
 		if (!snp.isFiltered()) {
 			chunk.lastPos = snp.getStart();
