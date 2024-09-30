@@ -55,12 +55,16 @@ public class InputValidationCommand implements Callable<Integer> {
 	@Option(names = "--contactEmail", description = "Contact Mail", required = false)
 	private String contactEmail = "n/a";
 
+	@Option(names = "--no-index", description = "Create no tabix index during validation", required = false)
+	private boolean noIndex = false;
+
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
 	private String report = null;
 
 	private RefPanel panel = null;
 
 	private OutputWriter output = null;
+
 
 	public InputValidationCommand() {
 
@@ -163,7 +167,7 @@ public class InputValidationCommand implements Callable<Integer> {
 
 			try {
 
-				VcfFile vcfFile = VcfFileUtil.load(filename, chunksize, true);
+				VcfFile vcfFile = VcfFileUtil.load(filename, chunksize, !noIndex);
 
 				if (VcfFileUtil.isChrMT(vcfFile.getChromosome())) {
 					vcfFile.setPhased(true);
