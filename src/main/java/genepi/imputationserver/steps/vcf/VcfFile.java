@@ -1,5 +1,6 @@
 package genepi.imputationserver.steps.vcf;
 
+import java.io.IOException;
 import java.util.Set;
 
 public class VcfFile {
@@ -44,7 +45,10 @@ public class VcfFile {
 		return chromosomes;
 	}
 
-	public String getChromosome() {
+	public String getChromosome() throws IOException {
+		if (chromosomes.isEmpty()) {
+			throw new IOException("No genotypes found in the VCF file. It appears the file contains only the header.");
+		}
 		return chromosomes.iterator().next();
 	}
 
@@ -109,7 +113,7 @@ public class VcfFile {
 	}
 
 	public String toString() {
-		return "Chromosome: " + getChromosome() + "\n Samples: "
+		return "Chromosome: " + getChromosomes() + "\n Samples: "
 				+ getNoSamples() + "\n Snps: " + getNoSnps() + "\n Chunks: "
 				+ getChunks().size();
 	}

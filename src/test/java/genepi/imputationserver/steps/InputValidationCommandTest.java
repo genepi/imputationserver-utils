@@ -21,6 +21,22 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	private static final String CLOUDGENE_LOG = "cloudgene.report";
 
 	@Test
+	public void testVcfWithHeaderOnly() throws Exception {
+
+		String inputFolder = "test-data/data/header";
+
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
+		command.setBuild("hg38");
+
+		assertEquals(1, (int) command.call());
+
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("::error:: No genotypes found in the VCF file. It appears the file contains only the header."));
+	}
+
+	@Test
 	public void testHg19DataWithBuild38() throws Exception {
 
 		String inputFolder = "test-data/data/three";
