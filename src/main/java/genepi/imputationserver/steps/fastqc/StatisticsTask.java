@@ -7,33 +7,16 @@ import genepi.imputationserver.steps.vcf.*;
 import genepi.imputationserver.util.GenomicTools;
 import genepi.imputationserver.util.StringUtils;
 import genepi.io.FileUtil;
-import genepi.io.text.LineReader;
 import genepi.io.text.LineWriter;
-import htsjdk.variant.variantcontext.Genotype;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.variantcontext.VariantContextBuilder;
-import htsjdk.variant.variantcontext.writer.Options;
-import htsjdk.variant.variantcontext.writer.VariantContextWriter;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder;
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder.OutputType;
-import htsjdk.variant.vcf.VCFCodec;
-import htsjdk.variant.vcf.VCFFileReader;
-import htsjdk.variant.vcf.VCFHeader;
-import htsjdk.variant.vcf.VCFHeaderVersion;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class StatisticsTask implements ITask {
-
-	public static final String X_PAR1 = "X.PAR1";
-	public static final String X_PAR2 = "X.PAR2";
-	public static final String X_NON_PAR = "X.nonPAR";
 
 	private String sitesFile;
 	private int refSamples;
@@ -78,14 +61,13 @@ public class StatisticsTask implements ITask {
 	private int invalidAlleles;
 	private int multiallelicSites;
 
-	private boolean chrXMissingRate = false;
-	private boolean chrXPloidyError = false;
-
 	// chunk results
 	private int removedChunksSnps;
 	private int removedChunksOverlap;
 	private int removedChunksCallRate;
 
+	private boolean chrXMissingRate = false;
+	private boolean chrXPloidyError = false;
 
 	private SnpMafWriter mafWriter;
 
@@ -94,8 +76,6 @@ public class StatisticsTask implements ITask {
 	private ExcludedSnpsWriter excludedSnpsWriter;
 
 	private ExcludedChunksWriter excludedChunkWriter;
-
-	private ChrXInfoWriter chrXInfoWriter;
 
 	@Override
 	public String getName() {
@@ -115,13 +95,9 @@ public class StatisticsTask implements ITask {
 		String excludedSnpsFile = FileUtil.path(statDir, "snps-excluded.txt");
 		excludedSnpsWriter = new ExcludedSnpsWriter(excludedSnpsFile);
 
-
 		// excluded chunks
 		String excludedChunkFile = FileUtil.path(statDir, "chunks-excluded.txt");
 		excludedChunkWriter = new ExcludedChunksWriter(excludedChunkFile);
-
-		String chrXInfoFile = FileUtil.path(statDir, "chrX-info.txt");
-		chrXInfoWriter = new ChrXInfoWriter(chrXInfoFile);
 
 		String typedOnlyFile = FileUtil.path(statDir, "snps-typed-only.txt");
 		typedOnlyWriter = new TypedOnlySnpsWriter(typedOnlyFile);
@@ -142,26 +118,28 @@ public class StatisticsTask implements ITask {
 			if (VcfFileUtil.isChrX(chromosome)) {
 
 				// split to PAR1, PAR2 and nonPAR
-				List<String> splits = prepareChrX(myvcfFile.getVcfFilename(), myvcfFile.isPhased(), hapSamples);
+				String chrXInfoFile = FileUtil.path(statDir, "chrX-info.txt");
+
+				ChrXPreprocessor chrXPreprocessor = new ChrXPreprocessor(myvcfFile.getVcfFilename(), build);
+				List<String> splits = chrXPreprocessor.splitVcf(mixedGenotypeschrX, chunksDir, chrXInfoFile, excludedSnpsWriter);
+				this.chrXMissingRate = chrXPreprocessor.isChrXMissingRate();
+				this.chrXPloidyError = chrXPreprocessor.isChrXPloidyError();
+				filtered += chrXPreprocessor.getFiltered();
+				invalidAlleles += chrXPreprocessor.getInvalidAlleles();
 
 				for (String split : splits) {
 					VcfFile _myvcfFile = VcfFileUtil.load(split, chunkSize, true);
-
 					_myvcfFile.setChrX(true);
-
-					// chrX
 					processFile(_myvcfFile);
 				}
 			} else {
 				// chr1-22
 				processFile(myvcfFile);
-
 			}
 		}
 
 		mafWriter.close();
 		excludedChunkWriter.close();
-		chrXInfoWriter.close();
 		typedOnlyWriter.close();
 		excludedSnpsWriter.close();
 
@@ -184,12 +162,7 @@ public class StatisticsTask implements ITask {
 
 		// set X region in filename
 		if (VcfFileUtil.isChrX(myvcfFile.getChromosome())) {
-			contig = X_NON_PAR;
-			if (filename.contains(X_PAR1)) {
-				contig = X_PAR1;
-			} else if (filename.contains(X_PAR2)) {
-				contig = X_PAR2;
-			}
+			contig = ChrXPreprocessor.getContig(filename);
 		}
 
 		String metafile = FileUtil.path(chunkFileDir, contig);
@@ -582,183 +555,6 @@ public class StatisticsTask implements ITask {
 
 		}
 
-	}
-
-	public List<String> prepareChrX(String filename, boolean phased, HashSet<String> hapSamples) throws IOException {
-
-		List<String> paths = new Vector<String>();
-		String nonPar = FileUtil.path(chunksDir, X_NON_PAR + ".vcf.gz");
-		VariantContextWriter vcfChunkWriterNonPar = new VariantContextWriterBuilder().setOutputFile(nonPar)
-				.setOption(Options.INDEX_ON_THE_FLY).setOption(Options.ALLOW_MISSING_FIELDS_IN_HEADER)
-				.setOutputFileType(OutputType.BLOCK_COMPRESSED_VCF).build();
-
-		String par1 = FileUtil.path(chunksDir, X_PAR1 + ".vcf.gz");
-		VariantContextWriter vcfChunkWriterPar1 = new VariantContextWriterBuilder().setOutputFile(par1)
-				.setOption(Options.INDEX_ON_THE_FLY).setOption(Options.ALLOW_MISSING_FIELDS_IN_HEADER)
-				.setOutputFileType(OutputType.BLOCK_COMPRESSED_VCF).build();
-
-		String par2 = FileUtil.path(chunksDir, X_PAR2 + ".vcf.gz");
-		VariantContextWriter vcfChunkWriterPar2 = new VariantContextWriterBuilder().setOutputFile(par2)
-				.setOption(Options.INDEX_ON_THE_FLY).setOption(Options.ALLOW_MISSING_FIELDS_IN_HEADER)
-				.setOutputFileType(OutputType.BLOCK_COMPRESSED_VCF).build();
-
-		VCFFileReader vcfReader = new VCFFileReader(new File(filename), true);
-
-		VCFHeader header = vcfReader.getFileHeader();
-		vcfChunkWriterNonPar.writeHeader(header);
-		vcfChunkWriterPar1.writeHeader(header);
-		vcfChunkWriterPar2.writeHeader(header);
-
-		int mixedGenotypes[] = null;
-		int count = 0;
-
-		int nonParStart = 2699520;
-		int nonParEnd = 154931044;
-
-		if (build.equals("hg38")) {
-			nonParStart = 2781479;
-			nonParEnd = 155701383;
-		}
-
-		VCFCodec codec = new VCFCodec();
-		codec.setVCFHeader(vcfReader.getFileHeader(), VCFHeaderVersion.VCF4_1);
-		LineReader reader = new LineReader(filename);
-
-		while (reader.next()) {
-
-			String lineString = reader.get();
-
-			if (!lineString.startsWith("#")) {
-
-				String tiles[] = lineString.split("\t", 6);
-				String ref = tiles[3];
-				String alt = tiles[4];
-
-				// filter invalid alleles
-				if (!GenomicTools.isValid(ref) || !GenomicTools.isValid(alt)) {
-					MinimalVariantContext variantContext = new MinimalVariantContext(1);
-					variantContext.setId(tiles[2]);
-					variantContext.setContig(tiles[0]);
-					variantContext.setStart(Integer.parseInt(tiles[1]));
-					variantContext.setReferenceAllele(ref);
-					variantContext.setAlternateAllele(alt);
-					excludedSnpsWriter.write(variantContext, "Invalid Alleles");
-					invalidAlleles++;
-					filtered++;
-					continue;
-				}
-
-				// now decode, since it's a valid VCF
-				VariantContext line = codec.decode(lineString);
-
-				if (line.getContig().equals("23")) {
-					line = new VariantContextBuilder(line).chr("X").make();
-				}
-
-				else if (line.getContig().equals("chr23")) {
-					line = new VariantContextBuilder(line).chr("chrX").make();
-				}
-
-				if (line.getStart() < nonParStart) {
-
-					vcfChunkWriterPar1.add(line);
-
-					if (!paths.contains(par1)) {
-						paths.add(par1);
-					}
-
-				}
-
-				else if (line.getStart() >= nonParStart && line.getStart() <= nonParEnd) {
-
-					count++;
-
-					checkPloidy(header.getGenotypeSamples(), line, phased, hapSamples);
-
-					mixedGenotypes = checkMixedGenotypes(mixedGenotypes, line);
-
-					vcfChunkWriterNonPar.add(line);
-
-					if (!paths.contains(nonPar)) {
-						paths.add(nonPar);
-					}
-
-				}
-
-				else {
-
-					vcfChunkWriterPar2.add(line);
-
-					if (!paths.contains(par2)) {
-						paths.add(par2);
-					}
-
-				}
-
-			}
-
-		}
-
-		if (mixedGenotypes != null) {
-			for (int i = 0; i < mixedGenotypes.length; i++) {
-				double missingRate = mixedGenotypes[i] / (double) count;
-				if (missingRate > mixedGenotypeschrX) {
-					this.chrXMissingRate = true;
-					break;
-				}
-
-			}
-		}
-
-		vcfReader.close();
-		reader.close();
-
-		vcfChunkWriterPar1.close();
-		vcfChunkWriterPar2.close();
-		vcfChunkWriterNonPar.close();
-
-		return paths;
-	}
-
-	// mixed genotype: ./1; 1/.;
-	private int[] checkMixedGenotypes(int[] mixedGenotypes, VariantContext line) {
-
-		if (mixedGenotypes == null) {
-
-			mixedGenotypes = new int[line.getNSamples()];
-			for (int i = 0; i < line.getNSamples(); i++) {
-				mixedGenotypes[i] = 0;
-			}
-		}
-
-		for (int i = 0; i < line.getNSamples(); i++) {
-			Genotype genotype = line.getGenotype(i);
-
-			if (genotype.isMixed()) {
-				mixedGenotypes[i] += 1;
-			}
-
-		}
-		return mixedGenotypes;
-	}
-
-	public void checkPloidy(List<String> samples, VariantContext snp, boolean isPhased,
-							HashSet<String> hapSamples) throws IOException {
-
-		for (final String name : samples) {
-
-			Genotype genotype = snp.getGenotype(name);
-
-			if (hapSamples.contains(name) && genotype.getPloidy() != 1) {
-				chrXInfoWriter.write(name, snp.getContig() + ":" + snp.getStart());
-				this.chrXPloidyError = true;
-			}
-
-			if (genotype.getPloidy() == 1) {
-				hapSamples.add(name);
-			}
-
-		}
 	}
 
 	private SitesFileReader getReader(String chromosome) throws IOException {
