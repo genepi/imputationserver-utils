@@ -517,6 +517,20 @@ public class QualityControlCommandTest extends AbstractTestcase {
 	}
 
 	@Test
+	public void testBigHeader() throws Exception {
+
+		String inputFolder = "test-data/data/big-header";
+
+		QualityControlCommand command = buildCommand(inputFolder);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2-region-simple.json");
+		assertEquals(1, (int) command.call());
+
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+
+	}
+
+	@Test
 	public void testChr23PipelineLifting() throws Exception {
 
 		String inputFolder = "test-data/data/chr23-phased";
