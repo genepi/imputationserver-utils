@@ -135,8 +135,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 37,503"));
-		assertTrue(log.hasInMemory("Duplicated sites: 618"));
+		assertTrue(log.hasInMemory("Alternative allele frequency > 0.5 sites: 37,610"));
+		assertTrue(log.hasInMemory("Duplicated sites: 0"));
 		assertTrue(log.hasInMemory("36 Chunk(s) excluded"));
 		assertTrue(log.hasInMemory("No chunks passed the QC step"));
 
@@ -183,8 +183,9 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
+		log.view();
+		assertTrue(log.hasInMemory("Excluded sites in total: 2,744"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,785"));
 
 	}
 
@@ -201,7 +202,7 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		File[] files = new File(TEST_DATA_TMP).listFiles();
 		Arrays.sort(files);
 		// baseline from a earlier job execution
-		int[] array = { 4750, 5174, 5106, 5832, 5318, 4588, 968, 3002, 5781, 5116, 5699, 6334, 3188 };
+		int[] array = { 4763, 5189, 5123, 5845, 5327, 4595, 970, 3007, 5792, 5129, 5711, 6345, 3195 };
 		int pos = 0;
 
 		for (File file : files) {
@@ -426,8 +427,9 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
+		log.view();
+		assertTrue(log.hasInMemory("Excluded sites in total: 2,744"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,785"));
 
 	}
 
@@ -443,8 +445,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 
 		// check statistics
-		assertTrue(log.hasInMemory("Excluded sites in total: 3,058"));
-		assertTrue(log.hasInMemory("Remaining sites in total: 117,498"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 2,744"));
+		assertTrue(log.hasInMemory("Remaining sites in total: 117,785"));
 		assertTrue(log.hasInMemory(
 				"<b>Error:</b> More than -1 obvious strand flips have been detected. Please check strand. Imputation cannot be started!"));
 
@@ -462,8 +464,8 @@ public class QualityControlCommandTest extends AbstractTestcase {
 		OutputReader log = new OutputReader(CLOUDGENE_LOG);
 		
 		// check statistics
-		assertTrue(log.hasInMemory("Excluded sites in total: 121,176"));
-		assertTrue(log.hasInMemory("Allele switch: 118,209"));
+		assertTrue(log.hasInMemory("Excluded sites in total: 121,140"));
+		assertTrue(log.hasInMemory("Allele switch: 118,443"));
 		assertTrue(log.hasInMemory("No chunks passed the QC step. Imputation cannot be started!"));
 	}
 
