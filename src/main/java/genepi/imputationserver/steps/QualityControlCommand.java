@@ -382,6 +382,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			result.setSuccess(false);
 			result.setMessage(e.getMessage());
 			output.error("Task '" + task.getName(), e);
+			e.printStackTrace();
 			return result;
 		}
 
@@ -389,5 +390,9 @@ public class QualityControlCommand implements Callable<Integer> {
 
 	public void setBuild(String build) {
 		this.build = build;
+	}
+
+	public void setNoIndex(boolean noIndex) {
+		this.noIndex = noIndex;
 	}
 }

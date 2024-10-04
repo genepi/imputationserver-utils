@@ -297,4 +297,7 @@ public class InputValidationCommand implements Callable<Integer> {
 		return true;
 	}
 
+	public void setNoIndex(boolean noIndex) {
+		this.noIndex = noIndex;
+	}
 }

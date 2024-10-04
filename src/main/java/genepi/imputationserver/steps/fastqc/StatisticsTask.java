@@ -604,7 +604,7 @@ public class StatisticsTask implements ITask {
 				.setOption(Options.INDEX_ON_THE_FLY).setOption(Options.ALLOW_MISSING_FIELDS_IN_HEADER)
 				.setOutputFileType(OutputType.BLOCK_COMPRESSED_VCF).build();
 
-		VCFFileReader vcfReader = new VCFFileReader(new File(filename), true);
+		VCFFileReader vcfReader = new VCFFileReader(new File(filename), false);
 
 		VCFHeader header = vcfReader.getFileHeader();
 		vcfChunkWriterNonPar.writeHeader(header);

@@ -175,6 +175,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 		InputValidationCommand command = buildCommand(inputFolder);
 		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
 		command.setPopulation("eur");
+		command.setNoIndex(false);
 
 		assertEquals(1, (int) command.call());
 
@@ -313,6 +314,7 @@ public class InputValidationCommandTest extends AbstractTestcase {
 
 	private InputValidationCommand buildCommand(String inputFolder) {
 		InputValidationCommand command = new InputValidationCommand();
+		command.setNoIndex(true);
 		command.setMinSamples(1);
 		command.setFiles(getFiles(inputFolder));
 		command.setReport(CLOUDGENE_LOG);
