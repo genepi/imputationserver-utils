@@ -23,6 +23,8 @@ public class LiftOverTask implements ITask {
 
 	private String statDir;
 
+	private boolean createIndex = true;
+
 	@Override
 	public String getName() {
 		return "Lift Over";
@@ -43,7 +45,9 @@ public class LiftOverTask implements ITask {
 			Vector<String> errors = VcfLiftOverFast.liftOver(filename, output, chainFile, temp);
 			
 			// create tabix index
-			VcfFileUtil.createIndex(output, true);
+			if (createIndex) {
+				VcfFileUtil.createIndex(output, true);
+			}
 			
 			FileUtil.deleteDirectory(temp);
 			for (String error : errors) {
@@ -60,6 +64,10 @@ public class LiftOverTask implements ITask {
 
 		return result;
 
+	}
+
+	public void setCreateIndex(boolean createIndex) {
+		this.createIndex = createIndex;
 	}
 
 	public void setVcfFilenames(String[] vcfFilenames) {

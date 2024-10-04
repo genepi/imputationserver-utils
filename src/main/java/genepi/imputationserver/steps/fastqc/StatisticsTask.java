@@ -97,6 +97,8 @@ public class StatisticsTask implements ITask {
 
 	private ChrXInfoWriter chrXInfoWriter;
 
+	private boolean createIndex = true;
+
 	@Override
 	public String getName() {
 		return "Calculating QC Statistics";
@@ -131,7 +133,7 @@ public class StatisticsTask implements ITask {
 
 		for (String vcfFilename : vcfFilenames) {
 
-			VcfFile myvcfFile = VcfFileUtil.load(vcfFilename, chunkSize, true);
+			VcfFile myvcfFile = VcfFileUtil.load(vcfFilename, chunkSize, createIndex);
 
 			String chromosome = myvcfFile.getChromosome();
 
@@ -145,7 +147,7 @@ public class StatisticsTask implements ITask {
 				List<String> splits = prepareChrX(myvcfFile.getVcfFilename(), myvcfFile.isPhased(), hapSamples);
 
 				for (String split : splits) {
-					VcfFile _myvcfFile = VcfFileUtil.load(split, chunkSize, true);
+					VcfFile _myvcfFile = VcfFileUtil.load(split, chunkSize, createIndex);
 
 					_myvcfFile.setChrX(true);
 
@@ -987,4 +989,7 @@ public class StatisticsTask implements ITask {
 		this.ranges = ranges;
 	}
 
+	public void setCreateIndex(boolean createIndex) {
+		this.createIndex = createIndex;
+	}
 }

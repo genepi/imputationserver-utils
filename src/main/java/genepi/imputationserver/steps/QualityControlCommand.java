@@ -58,6 +58,9 @@ public class QualityControlCommand implements Callable<Integer> {
 	@Option(names = "--report", description = "Cloudgene Report Output", required = false)
 	private String report = null;
 
+	@Option(names = "--no-index", description = "Create no tabix index during validation", required = false)
+	private boolean noIndex = false;
+
 	private OutputWriter output = null;
 
 	private RefPanel panel = null;
@@ -156,6 +159,7 @@ public class QualityControlCommand implements Callable<Integer> {
 		}
 
 		LiftOverTask task = new LiftOverTask();
+		task.setCreateIndex(!noIndex);
 		task.setVcfFilenames(vcfFilenames);
 		task.setChainFile(chainFile);
 		task.setChunksDir(chunksOutput);
@@ -198,6 +202,7 @@ public class QualityControlCommand implements Callable<Integer> {
 			task.setAlleleFrequencyCheck(false);
 		}
 
+		task.setCreateIndex(!noIndex);
 		task.setSitesFile(panel.getSites());
 		task.setRefSamples(refSamples);
 		task.setMafFile(mafOutput);
