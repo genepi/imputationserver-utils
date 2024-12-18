@@ -36,7 +36,6 @@ public class VcfFileUtil {
 			LineReader lineReader = new LineReader(vcfFilename);
 
 			boolean phased = true;
-			boolean phasedAutodetect = true;
 			boolean firstLine = true;
 			while (lineReader.next()) {
 
@@ -64,20 +63,6 @@ public class VcfFileUtil {
 
 					}
 
-					if (firstLine) {
-						boolean containsSymbol = tiles[9].contains("/") || tiles[9].contains(".");
-
-						if (!containsSymbol) {
-							phasedAutodetect = true;
-						} else {
-							phasedAutodetect = false;
-						}
-						firstLine = false;
-
-					}
-
-					// TODO: check that all are phased
-					// context.getGenotypes().get(0).isPhased();
 					chromosomes.add(chromosome);
 					if (chromosomes.size() > 1) {
 						throw new IOException(
@@ -154,7 +139,6 @@ public class VcfFileUtil {
 			pair.setRawChromosomes(rawChromosomes);
 			pair.setChrPrefix(hasChrPrefix);
 			pair.setPhased(phased);
-			pair.setPhasedAutodetect(phasedAutodetect);
 			pair.setChunkSize(chunksize);
 			return pair;
 

@@ -194,11 +194,6 @@ public class InputValidationCommand implements Callable<Integer> {
 
 				phased = phased && vcfFile.isPhased();
 
-				if (vcfFile.isPhasedAutodetect() && !vcfFile.isPhased()) {
-					output.error("File should be phased, but also includes unphased and/or missing genotypes! Please double-check!");
-					return false;
-				}
-
 				if (noSamples < minSamples && minSamples != 0) {
 					output.error("At least " + minSamples + " samples must be uploaded.");
 					return false;
