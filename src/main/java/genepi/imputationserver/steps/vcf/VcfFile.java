@@ -23,8 +23,6 @@ public class VcfFile {
 	
 	private boolean chrX = false;
 	
-	private boolean phasedAutodetect = true;
-
 	private int chunkSize;
 	
 	private boolean chrPrefix;
@@ -133,14 +131,6 @@ public class VcfFile {
 			return "VCF-UNPHASED";
 
 		}
-	}
-
-	public boolean isPhasedAutodetect() {
-		return phasedAutodetect;
-	}
-
-	public void setPhasedAutodetect(boolean phasedAutodetect) {
-		this.phasedAutodetect = phasedAutodetect;
 	}
 
 	public void setChunkSize(int chunkSize) {
