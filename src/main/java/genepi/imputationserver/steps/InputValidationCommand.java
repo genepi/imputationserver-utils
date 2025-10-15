@@ -168,18 +168,19 @@ public class InputValidationCommand implements Callable<Integer> {
 			try {
 
 				VcfFile vcfFile = VcfFileUtil.load(filename, chunksize, !noIndex);
+				String chromosome = vcfFile.getChromosome();
 
-				if (VcfFileUtil.isChrMT(vcfFile.getChromosome())) {
+				if (VcfFileUtil.isChrMT(chromosome)) {
 					vcfFile.setPhased(true);
 				}
 
-				if (!VcfFileUtil.isValidChromosome(vcfFile.getChromosome())) {
-					output.error("No valid chromosomes found!");
+				if (!VcfFileUtil.isValidChromosome(chromosome)) {
+					output.error("Invalid chromosome found: " + chromosome);
 					return false;
 				}
 
 				validVcfFiles.add(vcfFile);
-				chromosomes.add(vcfFile.getChromosome());
+				chromosomes.add(chromosome);
 
 				// check if all files have same amount of samples
 				if (noSamples != 0 && noSamples != vcfFile.getNoSamples()) {
@@ -210,14 +211,14 @@ public class InputValidationCommand implements Callable<Integer> {
 				if (build.equals("hg19") && vcfFile.hasChrPrefix()) {
 					output.error("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 							+ "'. This is not a valid hg19 encoding. Please ensure that your input data is build hg19 and chromosome is encoded as '"
-							+ vcfFile.getChromosome() + "'.");
+							+ chromosome + "'.");
 					return false;
 				}
 
 				if (build.equals("hg38") && !vcfFile.hasChrPrefix()) {
 					output.error("Your upload data contains chromosome '" + vcfFile.getRawChromosome()
 							+ "'. This is not a valid hg38 encoding. Please ensure that your input data is build hg38 and chromosome is encoded as 'chr"
-							+ vcfFile.getChromosome() + "'.");
+							+ chromosome + "'.");
 					return false;
 				}
 

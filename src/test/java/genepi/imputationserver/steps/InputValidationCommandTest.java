@@ -21,6 +21,38 @@ public class InputValidationCommandTest extends AbstractTestcase {
 	private static final String CLOUDGENE_LOG = "cloudgene.report";
 
 	@Test
+	public void testMissingReferencePanel() throws Exception {
+		String inputFolder = "test-data/data/chr20-phased";
+
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setReference("this-path/does-not-exist.json");
+		command.setBuild("hg38");
+
+		assertEquals(1, (int)command.call());
+
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("::error:: Unable to parse reference panel: this-path/does-not-exist.json (No such file or directory)"));
+	}
+
+	@Test
+	public void testInvalidChromosome() throws Exception {
+
+		String inputFolder = "test-data/data/chrY-fake";
+
+		InputValidationCommand command = buildCommand(inputFolder);
+		command.setReference("test-data/configs/hapmap-chr1/hapmap2.json");
+		command.setPopulation("mixed");
+
+		assertEquals(1, (int)command.call());
+
+		OutputReader log = new OutputReader(CLOUDGENE_LOG);
+		log.view();
+		assertTrue(log.hasInMemory("::error:: Invalid chromosome found: Y"));
+
+	}
+
+	@Test
 	public void testVcfWithHeaderOnly() throws Exception {
 
 		String inputFolder = "test-data/data/header";
